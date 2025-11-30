@@ -3,6 +3,7 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { ExternalLink } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import { YouTubeTableData } from '@/types';
 import { formatNumber } from '@/lib/utils';
 
@@ -97,6 +98,7 @@ export const youtubeColumns: ColumnDef<YouTubeTableData>[] = [
     header: 'Repurpose',
     cell: () => (
       <button
+        onClick={() => toast('Coming soon')}
         className="rounded-lg bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80
                    border border-white/10 hover:bg-white/10 hover:border-white/20
                    transition-all duration-200 hover:scale-105 active:scale-95"

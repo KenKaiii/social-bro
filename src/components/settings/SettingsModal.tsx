@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Eye, EyeOff, Check, Loader2, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 type ApiKeyService = 'youtube' | 'rapidapi';
 
@@ -80,9 +81,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         setEditingService(null);
         setInputValue('');
         setShowKey(false);
+        toast.success('API key saved');
+      } else {
+        toast.error('Failed to save key');
       }
     } catch (error) {
       console.error('Failed to save API key:', error);
+      toast.error('Failed to save key');
     } finally {
       setIsSaving(false);
     }
@@ -97,9 +102,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
       if (response.ok) {
         await fetchApiKeys();
+        toast.success('API key removed');
+      } else {
+        toast.error('Failed to remove key');
       }
     } catch (error) {
       console.error('Failed to delete API key:', error);
+      toast.error('Failed to remove key');
     } finally {
       setIsDeleting(null);
     }

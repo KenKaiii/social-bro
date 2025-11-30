@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bookmark, BookmarkCheck, Loader2, Settings } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   SearchInput,
   PlatformSelector,
@@ -26,9 +27,28 @@ export default function Home() {
   const [isSaved, setIsSaved] = useState(false);
   const [viewingSavedSearch, setViewingSavedSearch] = useState<SavedSearchWithResults | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [hasYouTubeKey, setHasYouTubeKey] = useState<boolean | null>(null);
+
+  // Check if YouTube API key is configured
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        const youtubeKey = data.find((k: { service: string; hasKey: boolean }) => k.service === 'youtube');
+        setHasYouTubeKey(youtubeKey?.hasKey ?? false);
+      })
+      .catch(() => setHasYouTubeKey(false));
+  }, [isSettingsOpen]); // Re-check when settings modal closes
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || isSearching) return;
+
+    // Check if YouTube API key is configured
+    if (selectedPlatform === 'youtube' && !hasYouTubeKey) {
+      toast.error('Add YouTube API key in Settings');
+      setIsSettingsOpen(true);
+      return;
+    }
 
     setIsSearching(true);
     setHasSearched(true);
@@ -41,8 +61,12 @@ export default function Home() {
     try {
       const results = await searchYouTubeWithDetails(searchQuery);
       setTableData(results);
+      if (results.length === 0) {
+        toast.error('No results found');
+      }
     } catch (error) {
       console.error('Search failed:', error);
+      toast.error('Search failed');
     } finally {
       setIsSearching(false);
     }
@@ -65,9 +89,13 @@ export default function Home() {
 
       if (response.ok) {
         setIsSaved(true);
+        toast.success('Search saved');
+      } else {
+        toast.error('Failed to save');
       }
     } catch (error) {
       console.error('Failed to save search:', error);
+      toast.error('Failed to save');
     } finally {
       setIsSaving(false);
     }
@@ -100,15 +128,6 @@ export default function Home() {
     return (
       <>
         <div className="min-h-screen px-4 py-8">
-          {/* Settings Button - Top Right */}
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="fixed right-6 top-6 z-40 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </button>
-
           <div className="mx-auto max-w-7xl">
             {/* Header */}
             <div className="mb-8 flex items-center justify-between">
@@ -163,7 +182,6 @@ export default function Home() {
             />
           </div>
         </div>
-        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </>
     );
   }

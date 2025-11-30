@@ -16,6 +16,9 @@ export interface YouTubeSearchOptions {
   maxResults?: number;
   order?: 'date' | 'rating' | 'relevance' | 'title' | 'viewCount';
   type?: 'video' | 'channel' | 'playlist';
+  regionCode?: string;
+  publishedAfter?: string;
+  videoDuration?: 'any' | 'short' | 'medium' | 'long';
 }
 
 export async function searchYouTube({
@@ -23,15 +26,42 @@ export async function searchYouTube({
   maxResults = 25,
   order = 'relevance',
   type = 'video',
+  regionCode,
+  publishedAfter,
+  videoDuration,
 }: YouTubeSearchOptions): Promise<YouTubeSearchResult[]> {
   const youtube = await getYouTubeClient();
-  const response = await youtube.search.list({
+
+  // Build request params
+  const params: {
+    part: string[];
+    q: string;
+    maxResults: number;
+    order: string;
+    type: string[];
+    regionCode?: string;
+    publishedAfter?: string;
+    videoDuration?: string;
+  } = {
     part: ['snippet'],
     q: query,
     maxResults,
     order,
     type: [type],
-  });
+  };
+
+  // Add optional parameters
+  if (regionCode) {
+    params.regionCode = regionCode;
+  }
+  if (publishedAfter) {
+    params.publishedAfter = publishedAfter;
+  }
+  if (videoDuration && videoDuration !== 'any') {
+    params.videoDuration = videoDuration;
+  }
+
+  const response = await youtube.search.list(params);
 
   const items = response.data.items || [];
 

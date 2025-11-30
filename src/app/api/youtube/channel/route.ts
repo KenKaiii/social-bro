@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChannelVideosByUsername } from '@/lib/youtube';
 import { getMultipleVideoDetails } from '@/lib/youtube';
+import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const username = searchParams.get('username');
-  const maxResults = parseInt(searchParams.get('maxResults') || '25', 10);
 
   if (!username) {
     return NextResponse.json(
@@ -15,6 +15,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Fetch config from database
+    let maxResults = 25;
+    try {
+      const dbConfig = await prisma.youTubeConfig.findFirst();
+      if (dbConfig) {
+        maxResults = dbConfig.maxResults;
+      }
+    } catch {
+      // Use default if config fetch fails
+    }
+
     const { channel, videos } = await getChannelVideosByUsername(username, maxResults);
 
     if (!channel) {

@@ -23,7 +23,7 @@ export async function searchPlatform(
   switch (platform) {
     case 'youtube': {
       const response = await fetch(
-        `/api/youtube/search?q=${encodeURIComponent(query)}&maxResults=25`
+        `/api/youtube/search?q=${encodeURIComponent(query)}&type=video`
       );
       if (!response.ok) {
         throw new Error('Failed to search YouTube');
@@ -73,7 +73,7 @@ export async function getChannelVideosWithDetails(
   username: string
 ): Promise<YouTubeTableData[]> {
   const response = await fetch(
-    `/api/youtube/channel?username=${encodeURIComponent(username)}&maxResults=25`
+    `/api/youtube/channel?username=${encodeURIComponent(username)}`
   );
 
   if (!response.ok) {
@@ -121,7 +121,7 @@ export async function searchYouTubeWithDetails(
 
   // First, search for videos
   const searchResponse = await fetch(
-    `/api/youtube/search?q=${encodeURIComponent(query)}&maxResults=25&type=video`
+    `/api/youtube/search?q=${encodeURIComponent(query)}&type=video`
   );
   if (!searchResponse.ok) {
     throw new Error('Failed to search YouTube');

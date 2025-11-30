@@ -127,3 +127,15 @@ model ApiKey {
 
   @@index([service])
 }
+
+// YouTube search configuration
+model YouTubeConfig {
+  id           String   @id @default(cuid())
+  maxResults   Int      @default(25) // 1-50
+  dateRange    String   @default("any") // any, day, week, month
+  region       String   @default("US") // ISO 3166-1 alpha-2 country code
+  videoDuration String  @default("any") // any, short (< 4min), medium, long (> 20min)
+  order        String   @default("relevance") // date, rating, relevance, title, viewCount
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

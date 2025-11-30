@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, Doto } from 'next/font/google';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 const inter = Inter({
@@ -25,7 +26,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${doto.variable} antialiased`}>{children}</body>
+      <body className={`${inter.variable} ${doto.variable} antialiased`}>
+        {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'rgba(0, 0, 0, 0.9)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '13px',
+              backdropFilter: 'blur(8px)',
+            },
+          }}
+        />
+      </body>
     </html>
   );
 }

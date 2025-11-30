@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, X } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Platform, SavedSearchWithResults } from '@/types';
 
 export interface SearchHistory {
@@ -56,6 +57,12 @@ export function addSearchToHistory(query: string, platform: Platform): void {
 
   const updated = [newSearch, ...filtered].slice(0, MAX_HISTORY);
   saveSearchHistory(updated);
+}
+
+function removeSearchFromHistory(id: string): void {
+  const history = getSearchHistory();
+  const filtered = history.filter((h) => h.id !== id);
+  saveSearchHistory(filtered);
 }
 
 // Subscribe to search history changes for useSyncExternalStore
@@ -130,8 +137,29 @@ export function PreviousSearches({
       .catch((err) => {
         console.error('Failed to fetch saved searches:', err);
         setSavedSearches([]);
+        toast.error('Failed to load saved');
       });
   }, [activeTab, savedSearches]);
+
+  const handleDeleteHistory = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    removeSearchFromHistory(id);
+  };
+
+  const handleDeleteSaved = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch(`/api/saved?id=${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setSavedSearches((prev) => prev?.filter((s) => s.id !== id) ?? null);
+        toast.success('Deleted');
+      } else {
+        toast.error('Failed to delete');
+      }
+    } catch {
+      toast.error('Failed to delete');
+    }
+  };
 
   const filteredSearches =
     activeTab === 'all'
@@ -175,28 +203,48 @@ export function PreviousSearches({
             <p className="text-sm text-white/40">No saved searches yet</p>
           ) : (
             savedSearches.map((saved) => (
-              <button
+              <div
                 key={saved.id}
-                onClick={() => onSavedSearchSelect(saved)}
-                className="flex items-center gap-2 max-w-[200px] truncate rounded-lg border border-white/20 bg-white/[0.08] px-3 py-2 text-sm text-white/80 transition-all duration-150 hover:border-white/30 hover:bg-white/[0.12] hover:text-white"
+                className="group relative"
               >
-                <Bookmark className="h-3 w-3 shrink-0 text-white/50" />
-                <span className="truncate">{saved.query}</span>
-                <span className="shrink-0 text-[10px] text-white/40">
-                  {saved.results.length}
-                </span>
-              </button>
+                <button
+                  onClick={() => onSavedSearchSelect(saved)}
+                  className="flex items-center gap-2 max-w-[200px] truncate rounded-lg border border-white/20 bg-white/[0.08] px-3 py-2 pr-7 text-sm text-white/80 transition-all duration-150 hover:border-white/30 hover:bg-white/[0.12] hover:text-white"
+                >
+                  <Bookmark className="h-3 w-3 shrink-0 text-white/50" />
+                  <span className="truncate">{saved.query}</span>
+                  <span className="shrink-0 text-[10px] text-white/40">
+                    {saved.results.length}
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => handleDeleteSaved(e, saved.id)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-white/0 transition-all group-hover:text-white/40 hover:!text-white/80 hover:bg-white/10"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
             ))
           )
         ) : (
           filteredSearches.map((search) => (
-            <button
+            <div
               key={search.id}
-              onClick={() => onSearchSelect(search.query, search.platform)}
-              className="max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/70 transition-all duration-150 hover:border-white/20 hover:bg-white/10 hover:text-white"
+              className="group relative"
             >
-              {search.query}
-            </button>
+              <button
+                onClick={() => onSearchSelect(search.query, search.platform)}
+                className="max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-3 py-2 pr-7 text-sm text-white/70 transition-all duration-150 hover:border-white/20 hover:bg-white/10 hover:text-white"
+              >
+                {search.query}
+              </button>
+              <button
+                onClick={(e) => handleDeleteHistory(e, search.id)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-white/0 transition-all group-hover:text-white/40 hover:!text-white/80 hover:bg-white/10"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
           ))
         )}
       </div>
