@@ -179,20 +179,20 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
           </div>
         ) : (
           <div className="space-y-5">
-            {/* Max Results */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <label className="mb-3 block text-sm font-medium text-white/80">
-                Number of Results
+            {/* Results count - visual buttons */}
+            <div>
+              <label className="mb-2.5 block text-sm font-medium text-white/70">
+                Results per search
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2">
                 {MAX_RESULTS_OPTIONS.map((num) => (
                   <button
                     key={num}
                     onClick={() => updateConfig('maxResults', num)}
-                    className={`rounded-lg px-3 py-1.5 text-sm transition-all ${
+                    className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
                       config.maxResults === num
                         ? 'bg-white text-black'
-                        : 'border border-white/20 text-white/60 hover:border-white/40 hover:text-white'
+                        : 'border border-white/15 text-white/50 hover:border-white/30 hover:text-white/80'
                     }`}
                   >
                     {num}
@@ -201,95 +201,82 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
               </div>
             </div>
 
-            {/* Date Range */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <label className="mb-3 block text-sm font-medium text-white/80">Date Range</label>
-              <div className="flex flex-wrap gap-2">
-                {DATE_RANGE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => updateConfig('dateRange', option.value)}
-                    className={`rounded-lg px-3 py-1.5 text-sm transition-all ${
-                      config.dateRange === option.value
-                        ? 'bg-white text-black'
-                        : 'border border-white/20 text-white/60 hover:border-white/40 hover:text-white'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            {/* Dropdowns grid */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white/70">Date Range</label>
+                <select
+                  value={config.dateRange}
+                  onChange={(e) => updateConfig('dateRange', e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                >
+                  {DATE_RANGE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-neutral-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            {/* Video Duration */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <label className="mb-3 block text-sm font-medium text-white/80">Video Duration</label>
-              <div className="flex flex-wrap gap-2">
-                {VIDEO_DURATION_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => updateConfig('videoDuration', option.value)}
-                    className={`rounded-lg px-3 py-1.5 text-sm transition-all ${
-                      config.videoDuration === option.value
-                        ? 'bg-white text-black'
-                        : 'border border-white/20 text-white/60 hover:border-white/40 hover:text-white'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white/70">Duration</label>
+                <select
+                  value={config.videoDuration}
+                  onChange={(e) => updateConfig('videoDuration', e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                >
+                  {VIDEO_DURATION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-neutral-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            {/* Sort Order */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <label className="mb-3 block text-sm font-medium text-white/80">Sort By</label>
-              <div className="flex flex-wrap gap-2">
-                {ORDER_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => updateConfig('order', option.value)}
-                    className={`rounded-lg px-3 py-1.5 text-sm transition-all ${
-                      config.order === option.value
-                        ? 'bg-white text-black'
-                        : 'border border-white/20 text-white/60 hover:border-white/40 hover:text-white'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white/70">Sort By</label>
+                <select
+                  value={config.order}
+                  onChange={(e) => updateConfig('order', e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                >
+                  {ORDER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-neutral-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            {/* Region */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <label className="mb-3 block text-sm font-medium text-white/80">Region</label>
-              <select
-                value={config.region}
-                onChange={(e) => updateConfig('region', e.target.value)}
-                className="w-full rounded-lg border border-white/20 bg-white/[0.05] px-3 py-2 text-sm text-white transition-colors focus:border-white/40 focus:outline-none"
-              >
-                {REGION_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value} className="bg-black text-white">
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white/70">Region</label>
+                <select
+                  value={config.region}
+                  onChange={(e) => updateConfig('region', e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                >
+                  {REGION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value} className="bg-neutral-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Save Button */}
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-1">
               <button
                 onClick={handleSave}
                 disabled={!hasChanges || isSaving}
-                className="flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/20 disabled:opacity-50 disabled:hover:bg-white/10"
+                className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition-all hover:bg-white/90 disabled:opacity-40"
               >
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Check className="h-4 w-4" />
                 )}
-                {isSaving ? 'Saving...' : 'Save Settings'}
+                {isSaving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>
