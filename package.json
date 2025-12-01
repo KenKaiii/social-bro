@@ -19,10 +19,12 @@
   "dependencies": {
     "@prisma/client": "^6.19.0",
     "@tanstack/react-table": "^8.21.3",
+    "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
     "googleapis": "^166.0.0",
     "lucide-react": "^0.555.0",
     "next": "16.0.5",
+    "next-auth": "^5.0.0-beta.30",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "sonner": "^2.0.7",
@@ -30,6 +32,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^24.10.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",

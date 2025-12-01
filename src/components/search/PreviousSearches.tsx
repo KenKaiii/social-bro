@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useSession } from 'next-auth/react';
 import { Bookmark, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Platform, SavedSearchWithResults } from '@/types';
@@ -12,17 +13,24 @@ export interface SearchHistory {
   timestamp: number;
 }
 
-const STORAGE_KEY = 'social-bro-search-history';
+const STORAGE_KEY_PREFIX = 'social-bro-search-history';
 const MAX_HISTORY = 20;
 
 // Event for notifying search history updates
 const HISTORY_UPDATE_EVENT = 'social-bro-history-update';
 
+// Current user ID for localStorage key (set by component)
+let currentUserId: string | null = null;
+
+function getStorageKey(): string {
+  return currentUserId ? `${STORAGE_KEY_PREFIX}-${currentUserId}` : STORAGE_KEY_PREFIX;
+}
+
 // Helper functions for localStorage
 function getSearchHistory(): SearchHistory[] {
   if (typeof window === 'undefined') return [];
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey());
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('Failed to parse search history from localStorage:', error);
@@ -33,7 +41,7 @@ function getSearchHistory(): SearchHistory[] {
 function saveSearchHistory(history: SearchHistory[]): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    localStorage.setItem(getStorageKey(), JSON.stringify(history));
     window.dispatchEvent(new Event(HISTORY_UPDATE_EVENT));
   } catch (error) {
     console.error('Failed to save search history to localStorage:', error);
@@ -77,24 +85,46 @@ function subscribeToSearchHistory(callback: () => void): () => void {
 }
 
 // Cache for snapshots to prevent infinite loops
-let cachedHistory: SearchHistory[] | null = null;
-let cachedHistoryString: string | null = null;
+const snapshotCache = {
+  storageKey: null as string | null,
+  dataString: null as string | null,
+  data: [] as SearchHistory[],
+};
 
 function getSearchHistorySnapshot(): SearchHistory[] {
-  const currentString = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+  if (typeof window === 'undefined') return snapshotCache.data;
 
-  if (currentString !== cachedHistoryString) {
-    cachedHistoryString = currentString;
-    cachedHistory = currentString ? JSON.parse(currentString) : [];
+  const storageKey = getStorageKey();
+  const currentString = localStorage.getItem(storageKey);
+
+  // Only update cache if data actually changed
+  if (storageKey === snapshotCache.storageKey && currentString === snapshotCache.dataString) {
+    return snapshotCache.data;
   }
 
-  return cachedHistory ?? [];
+  // Data or key changed, update cache
+  snapshotCache.storageKey = storageKey;
+  snapshotCache.dataString = currentString;
+  snapshotCache.data = currentString ? JSON.parse(currentString) : [];
+
+  return snapshotCache.data;
 }
 
 // Server snapshot - cached empty array
 const emptyArray: SearchHistory[] = [];
 function getServerSnapshot(): SearchHistory[] {
   return emptyArray;
+}
+
+// Set user ID (called from component via useEffect)
+export function setSearchHistoryUserId(userId: string | null): void {
+  if (currentUserId !== userId) {
+    currentUserId = userId;
+    // Trigger update so useSyncExternalStore re-reads
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(HISTORY_UPDATE_EVENT));
+    }
+  }
 }
 
 const TABS: { id: Platform | 'all' | 'saved'; label: string }[] = [
@@ -111,8 +141,14 @@ interface PreviousSearchesProps {
 }
 
 export function PreviousSearches({ onSearchSelect, onSavedSearchSelect }: PreviousSearchesProps) {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<Platform | 'all' | 'saved'>('all');
   const [savedSearches, setSavedSearches] = useState<SavedSearchWithResults[] | null>(null);
+
+  // Set user ID for localStorage isolation
+  useEffect(() => {
+    setSearchHistoryUserId(session?.user?.id ?? null);
+  }, [session?.user?.id]);
 
   // Use useSyncExternalStore to safely read from localStorage without hydration mismatch
   const searches = useSyncExternalStore(

@@ -12,6 +12,7 @@ export interface YouTubeSearchResult {
 }
 
 export interface YouTubeSearchOptions {
+  userId: string;
   query: string;
   maxResults?: number;
   order?: 'date' | 'rating' | 'relevance' | 'title' | 'viewCount';
@@ -22,6 +23,7 @@ export interface YouTubeSearchOptions {
 }
 
 export async function searchYouTube({
+  userId,
   query,
   maxResults = 25,
   order = 'relevance',
@@ -30,7 +32,7 @@ export async function searchYouTube({
   publishedAfter,
   videoDuration,
 }: YouTubeSearchOptions): Promise<YouTubeSearchResult[]> {
-  const youtube = await getYouTubeClient();
+  const youtube = await getYouTubeClient(userId);
 
   // Build request params
   const params: {

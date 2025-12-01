@@ -16,8 +16,11 @@ export interface YouTubeVideoDetails {
   tags: string[];
 }
 
-export async function getVideoDetails(videoId: string): Promise<YouTubeVideoDetails | null> {
-  const youtube = await getYouTubeClient();
+export async function getVideoDetails(
+  userId: string,
+  videoId: string
+): Promise<YouTubeVideoDetails | null> {
+  const youtube = await getYouTubeClient(userId);
   const response = await youtube.videos.list({
     part: ['snippet', 'statistics', 'contentDetails'],
     id: [videoId],
@@ -46,8 +49,11 @@ export async function getVideoDetails(videoId: string): Promise<YouTubeVideoDeta
   };
 }
 
-export async function getMultipleVideoDetails(videoIds: string[]): Promise<YouTubeVideoDetails[]> {
-  const youtube = await getYouTubeClient();
+export async function getMultipleVideoDetails(
+  userId: string,
+  videoIds: string[]
+): Promise<YouTubeVideoDetails[]> {
+  const youtube = await getYouTubeClient(userId);
   const response = await youtube.videos.list({
     part: ['snippet', 'statistics', 'contentDetails'],
     id: videoIds,

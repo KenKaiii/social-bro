@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireUserId, requireValidUser } from '@/lib/auth-utils';
 
 export interface YouTubeConfigData {
   maxResults: number;
@@ -17,10 +18,14 @@ const DEFAULT_CONFIG: YouTubeConfigData = {
   order: 'relevance',
 };
 
-// GET - Fetch YouTube config
+// GET - Fetch YouTube config for current user
 export async function GET() {
   try {
-    const config = await prisma.youTubeConfig.findFirst();
+    const userId = await requireUserId();
+
+    const config = await prisma.youTubeConfig.findUnique({
+      where: { userId },
+    });
 
     if (!config) {
       return NextResponse.json(DEFAULT_CONFIG);
@@ -34,14 +39,19 @@ export async function GET() {
       order: config.order,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Failed to fetch YouTube config:', error);
     return NextResponse.json(DEFAULT_CONFIG);
   }
 }
 
-// POST - Save YouTube config
+// POST - Save YouTube config for current user
 export async function POST(request: NextRequest) {
   try {
+    const userId = await requireValidUser();
+
     const body = await request.json();
     const { maxResults, dateRange, region, videoDuration, order } = body;
 
@@ -107,32 +117,25 @@ export async function POST(request: NextRequest) {
       ? order
       : 'relevance';
 
-    // Upsert config (update if exists, create if not)
-    const existingConfig = await prisma.youTubeConfig.findFirst();
-
-    let config;
-    if (existingConfig) {
-      config = await prisma.youTubeConfig.update({
-        where: { id: existingConfig.id },
-        data: {
-          maxResults: validMaxResults,
-          dateRange: validDateRange,
-          region: validRegion,
-          videoDuration: validDuration,
-          order: validOrder,
-        },
-      });
-    } else {
-      config = await prisma.youTubeConfig.create({
-        data: {
-          maxResults: validMaxResults,
-          dateRange: validDateRange,
-          region: validRegion,
-          videoDuration: validDuration,
-          order: validOrder,
-        },
-      });
-    }
+    // Upsert config for this user
+    const config = await prisma.youTubeConfig.upsert({
+      where: { userId },
+      update: {
+        maxResults: validMaxResults,
+        dateRange: validDateRange,
+        region: validRegion,
+        videoDuration: validDuration,
+        order: validOrder,
+      },
+      create: {
+        userId,
+        maxResults: validMaxResults,
+        dateRange: validDateRange,
+        region: validRegion,
+        videoDuration: validDuration,
+        order: validOrder,
+      },
+    });
 
     return NextResponse.json({
       maxResults: config.maxResults,
@@ -142,6 +145,17 @@ export async function POST(request: NextRequest) {
       order: config.order,
     });
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message === 'InvalidSession') {
+        return NextResponse.json(
+          { error: 'Session invalid. Please log out and log in again.' },
+          { status: 401 }
+        );
+      }
+    }
     console.error('Failed to save YouTube config:', error);
     return NextResponse.json({ error: 'Failed to save configuration' }, { status: 500 });
   }

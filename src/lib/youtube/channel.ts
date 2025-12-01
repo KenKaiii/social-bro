@@ -14,8 +14,11 @@ export interface YouTubeChannelDetails {
   publishedAt: string;
 }
 
-export async function getChannelDetails(channelId: string): Promise<YouTubeChannelDetails | null> {
-  const youtube = await getYouTubeClient();
+export async function getChannelDetails(
+  userId: string,
+  channelId: string
+): Promise<YouTubeChannelDetails | null> {
+  const youtube = await getYouTubeClient(userId);
   const response = await youtube.channels.list({
     part: ['snippet', 'statistics'],
     id: [channelId],
@@ -42,9 +45,10 @@ export async function getChannelDetails(channelId: string): Promise<YouTubeChann
 }
 
 export async function getChannelByUsername(
+  userId: string,
   username: string
 ): Promise<YouTubeChannelDetails | null> {
-  const youtube = await getYouTubeClient();
+  const youtube = await getYouTubeClient(userId);
   const response = await youtube.channels.list({
     part: ['snippet', 'statistics'],
     forHandle: username,
@@ -71,10 +75,11 @@ export async function getChannelByUsername(
 }
 
 export async function getChannelVideos(
+  userId: string,
   channelId: string,
   maxResults: number = 25
 ): Promise<YouTubeSearchResult[]> {
-  const youtube = await getYouTubeClient();
+  const youtube = await getYouTubeClient(userId);
   const response = await youtube.search.list({
     part: ['snippet'],
     channelId,
@@ -101,16 +106,17 @@ export async function getChannelVideos(
 }
 
 export async function getChannelVideosByUsername(
+  userId: string,
   username: string,
   maxResults: number = 25
 ): Promise<{ channel: YouTubeChannelDetails | null; videos: YouTubeSearchResult[] }> {
-  const channel = await getChannelByUsername(username);
+  const channel = await getChannelByUsername(userId, username);
 
   if (!channel) {
     return { channel: null, videos: [] };
   }
 
-  const videos = await getChannelVideos(channel.id, maxResults);
+  const videos = await getChannelVideos(userId, channel.id, maxResults);
 
   return { channel, videos };
 }

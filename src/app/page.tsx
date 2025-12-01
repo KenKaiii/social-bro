@@ -13,6 +13,7 @@ import { WelcomeHeader } from '@/components/search/WelcomeHeader';
 import { PreLoader } from '@/components/preloader';
 import { DataTable, youtubeColumns } from '@/components/data-table';
 import { SettingsModal } from '@/components/settings';
+import { UserMenu } from '@/components/auth';
 import { searchYouTubeWithDetails } from '@/lib/api';
 import type { Platform, YouTubeTableData, SavedSearchWithResults } from '@/types';
 
@@ -199,14 +200,17 @@ export default function Home() {
     <>
       {showPreLoader && <PreLoader onComplete={() => setShowPreLoader(false)} />}
       <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
-        {/* Settings Button - Top Right */}
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="fixed right-6 top-6 z-40 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white"
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </button>
+        {/* Top Right Controls */}
+        <div className="fixed right-6 top-6 z-40 flex items-center gap-6">
+          <UserMenu />
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white"
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </button>
+        </div>
 
         {/* Main content - centered */}
         <div className="flex w-full max-w-[57.75rem] flex-col items-center gap-8">

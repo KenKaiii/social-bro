@@ -7,6 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User model for authentication (invite-only)
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String?  // Null until user sets their password
+  name        String?
+  inviteToken String?  @unique // Token for setting password
+  invitedAt   DateTime @default(now())
+  createdAt   DateTime? // Set when user completes signup
+  updatedAt   DateTime @updatedAt
+
+  // User's data
+  searches      Search[]
+  savedSearches SavedSearch[]
+  savedItems    SavedItem[]
+  apiKeys       ApiKey[]
+  youtubeConfig YouTubeConfig?
+
+  @@index([email])
+  @@index([inviteToken])
+}
+
 // Platform enum
 enum Platform {
   youtube
@@ -17,6 +39,8 @@ enum Platform {
 // Search history - stores user searches
 model Search {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   query     String
   platform  Platform
   createdAt DateTime @default(now())
@@ -25,6 +49,7 @@ model Search {
   // Results from this search
   results SearchResult[]
 
+  @@index([userId])
   @@index([platform])
   @@index([createdAt])
 }
@@ -64,6 +89,8 @@ model SearchResult {
 // Saved searches - user bookmarked searches with full data
 model SavedSearch {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   query     String
   platform  Platform
   createdAt DateTime @default(now())
@@ -71,7 +98,8 @@ model SavedSearch {
   // Saved results
   results SavedSearchResult[]
 
-  @@unique([query, platform])
+  @@unique([userId, query, platform])
+  @@index([userId])
   @@index([platform])
   @@index([createdAt])
 }
@@ -98,6 +126,8 @@ model SavedSearchResult {
 // Saved items - individual videos/posts saved by user
 model SavedItem {
   id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   externalId  String
   platform    Platform
   title       String
@@ -112,25 +142,32 @@ model SavedItem {
   publishedAt DateTime?
   savedAt     DateTime @default(now())
 
-  @@unique([externalId, platform])
+  @@unique([userId, externalId, platform])
+  @@index([userId])
   @@index([platform])
   @@index([savedAt])
 }
 
-// API Keys - stores encrypted API keys for different services
+// API Keys - stores encrypted API keys for different services per user
 model ApiKey {
   id        String   @id @default(cuid())
-  service   String   @unique // e.g., "youtube", "rapidapi"
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service   String   // e.g., "youtube", "rapidapi"
   key       String   // encrypted API key
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([userId, service])
+  @@index([userId])
   @@index([service])
 }
 
-// YouTube search configuration
+// YouTube search configuration per user
 model YouTubeConfig {
   id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   maxResults   Int      @default(25) // 1-50
   dateRange    String   @default("any") // any, day, week, month
   region       String   @default("US") // ISO 3166-1 alpha-2 country code

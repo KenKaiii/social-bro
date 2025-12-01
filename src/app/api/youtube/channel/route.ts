@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getChannelVideosByUsername } from '@/lib/youtube';
 import { getMultipleVideoDetails } from '@/lib/youtube';
 import { prisma } from '@/lib/db';
+import { requireUserId } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -12,10 +13,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const userId = await requireUserId();
+
     // Fetch config from database
     let maxResults = 25;
     try {
-      const dbConfig = await prisma.youTubeConfig.findFirst();
+      const dbConfig = await prisma.youTubeConfig.findUnique({
+        where: { userId },
+      });
       if (dbConfig) {
         maxResults = dbConfig.maxResults;
       }
@@ -24,7 +29,7 @@ export async function GET(request: NextRequest) {
       // Use default if config fetch fails
     }
 
-    const { channel, videos } = await getChannelVideosByUsername(username, maxResults);
+    const { channel, videos } = await getChannelVideosByUsername(userId, username, maxResults);
 
     if (!channel) {
       return NextResponse.json({ error: 'Channel not found' }, { status: 404 });
@@ -34,7 +39,8 @@ export async function GET(request: NextRequest) {
     const videoIds = videos.map((v) => v.id).filter(Boolean);
 
     // Fetch video details with stats
-    const videoDetails = videoIds.length > 0 ? await getMultipleVideoDetails(videoIds) : [];
+    const videoDetails =
+      videoIds.length > 0 ? await getMultipleVideoDetails(userId, videoIds) : [];
 
     return NextResponse.json({
       channel,
@@ -42,6 +48,9 @@ export async function GET(request: NextRequest) {
       videoDetails,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Error fetching channel videos:', error);
     return NextResponse.json({ error: 'Failed to fetch channel videos' }, { status: 500 });
   }
