@@ -144,25 +144,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
       {/* Modal */}
       <div
-        className={`relative w-full max-w-lg rounded-2xl border border-white/10 bg-black/90 p-6 shadow-2xl transition-all duration-300 ${
+        className={`relative w-[calc(100%-1.5rem)] sm:w-full max-w-lg mx-3 sm:mx-0 rounded-xl sm:rounded-2xl border border-white/10 bg-black/90 p-4 sm:p-6 shadow-2xl transition-all duration-300 max-h-[90vh] overflow-y-auto ${
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-white">Settings</h2>
+        <div className="mb-4 sm:mb-6 flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-medium text-white">Settings</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-white/40 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* API Keys Section */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div>
-            <h3 className="mb-4 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50">
+            <h3 className="mb-3 sm:mb-4 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.1em] sm:tracking-[0.15em] text-white/50">
               API Keys
             </h3>
 
@@ -171,7 +171,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <Loader2 className="h-5 w-5 animate-spin text-white/40" />
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {(['youtube', 'rapidapi'] as ApiKeyService[]).map((service) => {
                   const keyState = apiKeys.find((k) => k.service === service);
                   const config = SERVICE_CONFIG[service];
@@ -180,17 +180,17 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   return (
                     <div
                       key={service}
-                      className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
+                      className="rounded-lg sm:rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:p-4"
                     >
-                      <div className="mb-2 flex items-center justify-between">
-                        <label className="text-sm font-medium text-white/80">{config.label}</label>
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <label className="text-xs sm:text-sm font-medium text-white/80">{config.label}</label>
                         {keyState?.hasKey && !isEditing && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-white/40">{keyState.maskedKey}</span>
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <span className="text-[10px] sm:text-xs text-white/40 truncate max-w-[80px] sm:max-w-none">{keyState.maskedKey}</span>
                             <button
                               onClick={() => handleDelete(service)}
                               disabled={isDeleting === service}
-                              className="rounded-lg p-1 text-white/30 transition-colors hover:bg-red-500/20 hover:text-red-400"
+                              className="rounded-lg p-1.5 sm:p-1 min-h-[36px] min-w-[36px] sm:min-h-0 sm:min-w-0 flex items-center justify-center text-white/30 transition-colors hover:bg-red-500/20 hover:text-red-400"
                             >
                               {isDeleting === service ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -204,11 +204,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                       {/* RapidAPI info section */}
                       {service === 'rapidapi' && (
-                        <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5">
+                        <div className="mb-3 flex items-start gap-2 sm:gap-2.5 rounded-lg border border-white/5 bg-white/[0.02] px-2.5 sm:px-3 py-2 sm:py-2.5">
                           <Info className="mt-px h-3 w-3 flex-shrink-0 text-white/30" />
-                          <div className="text-[11px] leading-relaxed text-white/40">
+                          <div className="text-[10px] sm:text-[11px] leading-relaxed text-white/40">
                             <span>Subscribe to these APIs (free tier works):</span>
-                            <div className="mt-1.5 flex gap-3">
+                            <div className="mt-1.5 flex flex-col sm:flex-row gap-1.5 sm:gap-3">
                               <a
                                 href="https://rapidapi.com/irrors-apis/api/instagram-looter2/"
                                 target="_blank"
@@ -270,14 +270,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             <div className="flex justify-end gap-2 pb-1">
                               <button
                                 onClick={handleCancelEdit}
-                                className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white/60 transition-all hover:border-white/30 hover:text-white"
+                                className="rounded-lg border border-white/20 px-3 py-1.5 min-h-[36px] text-[11px] sm:text-xs font-medium text-white/60 transition-all hover:border-white/30 hover:text-white active:scale-95"
                               >
                                 Cancel
                               </button>
                               <button
                                 onClick={() => handleSave(service)}
                                 disabled={!inputValue.trim() || isSaving}
-                                className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-white/20 disabled:opacity-50"
+                                className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 min-h-[36px] text-[11px] sm:text-xs font-medium text-white transition-all hover:bg-white/20 disabled:opacity-50 active:scale-95"
                               >
                                 {isSaving ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -301,7 +301,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         <div className="overflow-hidden">
                           <button
                             onClick={() => handleStartEdit(service)}
-                            className="w-full rounded-lg border border-dashed border-white/20 py-2 text-xs text-white/40 transition-all hover:border-white/30 hover:text-white/60"
+                            className="w-full rounded-lg border border-dashed border-white/20 py-2 min-h-[40px] text-[11px] sm:text-xs text-white/40 transition-all hover:border-white/30 hover:text-white/60 active:scale-[0.98]"
                           >
                             {keyState?.hasKey ? 'Update key' : 'Add key'}
                           </button>
@@ -316,7 +316,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Footer note */}
-        <p className="mt-6 text-center text-[10px] uppercase tracking-[0.15em] text-white/25">
+        <p className="mt-4 sm:mt-6 text-center text-[9px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] text-white/25">
           API keys are encrypted and stored securely
         </p>
       </div>

@@ -22,9 +22,9 @@ export function WelcomeHeader() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 text-center">
+    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center px-4">
       <h1
-        className="flex text-4xl font-medium text-white font-doto"
+        className="flex text-2xl sm:text-3xl md:text-4xl font-medium text-white font-doto"
         onMouseLeave={() => setHoveredIndex(null)}
       >
         {TEXT.split('').map((char, index) => (

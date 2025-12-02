@@ -69,7 +69,7 @@ export function PreLoader({ onComplete, duration = 2000 }: PreLoaderProps) {
         isFadingOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      <h1 className="flex text-6xl font-medium text-white font-doto">
+      <h1 className="flex text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium text-white font-doto">
         {TEXT.split('').map((char, index) => (
           <span
             key={index}

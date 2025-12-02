@@ -209,17 +209,17 @@ export function PreviousSearches({ onSearchSelect, onSavedSearchSelect }: Previo
   return (
     <div className="w-full max-w-4xl">
       {/* Header */}
-      <h2 className="mb-4 text-sm font-medium text-white/50">
+      <h2 className="mb-3 sm:mb-4 text-xs sm:text-sm font-medium text-white/50">
         {activeTab === 'saved' ? 'Your saved searches' : 'Your previous searches'}
       </h2>
 
-      {/* Tabs */}
-      <div className="mb-4 flex items-center gap-1">
+      {/* Tabs - horizontally scrollable on mobile */}
+      <div className="mb-3 sm:mb-4 flex items-center gap-1 overflow-x-auto scrollbar-hidden pb-1">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 min-h-[36px] text-[10px] sm:text-xs font-medium transition-all duration-150 whitespace-nowrap active:scale-95 ${
               activeTab === tab.id ? 'bg-white text-black' : 'text-white/50 hover:text-white/80'
             }`}
           >
@@ -229,27 +229,27 @@ export function PreviousSearches({ onSearchSelect, onSavedSearchSelect }: Previo
         ))}
       </div>
 
-      {/* Search tiles - fixed 4 rows height */}
-      <div className="flex h-[176px] flex-wrap content-start gap-2 overflow-hidden">
+      {/* Search tiles - responsive height */}
+      <div className="flex h-[120px] sm:h-[176px] flex-wrap content-start gap-1.5 sm:gap-2 overflow-hidden">
         {activeTab === 'saved' ? (
           savedSearches === null ? (
-            <p className="text-sm text-white/40">Loading saved searches...</p>
+            <p className="text-xs sm:text-sm text-white/40">Loading saved searches...</p>
           ) : savedSearches.length === 0 ? (
-            <p className="text-sm text-white/40">No saved searches yet</p>
+            <p className="text-xs sm:text-sm text-white/40">No saved searches yet</p>
           ) : (
             savedSearches.map((saved) => (
               <div key={saved.id} className="group relative">
                 <button
                   onClick={() => onSavedSearchSelect(saved)}
-                  className="flex items-center gap-2 max-w-[200px] truncate rounded-lg border border-white/20 bg-white/[0.08] px-3 py-2 pr-7 text-sm text-white/80 transition-all duration-150 hover:border-white/30 hover:bg-white/[0.12] hover:text-white"
+                  className="flex items-center gap-1.5 sm:gap-2 max-w-[140px] sm:max-w-[200px] truncate rounded-lg border border-white/20 bg-white/[0.08] px-2.5 sm:px-3 py-1.5 sm:py-2 pr-6 sm:pr-7 min-h-[36px] text-xs sm:text-sm text-white/80 transition-all duration-150 hover:border-white/30 hover:bg-white/[0.12] hover:text-white active:scale-95"
                 >
                   <Bookmark className="h-3 w-3 shrink-0 text-white/50" />
                   <span className="truncate">{saved.query}</span>
-                  <span className="shrink-0 text-[10px] text-white/40">{saved.results.length}</span>
+                  <span className="shrink-0 text-[9px] sm:text-[10px] text-white/40">{saved.results.length}</span>
                 </button>
                 <button
                   onClick={(e) => handleDeleteSaved(e, saved.id)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-white/0 transition-all group-hover:text-white/40 hover:!text-white/80 hover:bg-white/10"
+                  className="absolute right-0.5 sm:right-1 top-1/2 -translate-y-1/2 rounded p-1 min-h-[28px] min-w-[28px] flex items-center justify-center text-white/30 sm:text-white/0 transition-all sm:group-hover:text-white/40 hover:!text-white/80 hover:bg-white/10"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -261,13 +261,13 @@ export function PreviousSearches({ onSearchSelect, onSavedSearchSelect }: Previo
             <div key={search.id} className="group relative">
               <button
                 onClick={() => onSearchSelect(search.query, search.platform)}
-                className="max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-3 py-2 pr-7 text-sm text-white/70 transition-all duration-150 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                className="max-w-[120px] sm:max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 sm:py-2 pr-6 sm:pr-7 min-h-[36px] text-xs sm:text-sm text-white/70 transition-all duration-150 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-95"
               >
                 {search.query}
               </button>
               <button
                 onClick={(e) => handleDeleteHistory(e, search.id)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-white/0 transition-all group-hover:text-white/40 hover:!text-white/80 hover:bg-white/10"
+                className="absolute right-0.5 sm:right-1 top-1/2 -translate-y-1/2 rounded p-1 min-h-[28px] min-w-[28px] flex items-center justify-center text-white/30 sm:text-white/0 transition-all sm:group-hover:text-white/40 hover:!text-white/80 hover:bg-white/10"
               >
                 <X className="h-3 w-3" />
               </button>

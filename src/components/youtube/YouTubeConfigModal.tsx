@@ -158,16 +158,16 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
 
       {/* Modal */}
       <div
-        className={`relative w-full max-w-lg rounded-2xl border border-white/10 bg-black/90 p-6 shadow-2xl transition-all duration-300 ${
+        className={`relative w-[calc(100%-1.5rem)] sm:w-full max-w-lg mx-3 sm:mx-0 rounded-xl sm:rounded-2xl border border-white/10 bg-black/90 p-4 sm:p-6 shadow-2xl transition-all duration-300 max-h-[90vh] overflow-y-auto ${
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-white">YouTube Search Settings</h2>
+        <div className="mb-4 sm:mb-6 flex items-center justify-between">
+          <h2 className="text-sm sm:text-lg font-medium text-white">YouTube Search Settings</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-white/40 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
@@ -178,18 +178,18 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
             <Loader2 className="h-5 w-5 animate-spin text-white/40" />
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             {/* Results count - visual buttons */}
             <div>
-              <label className="mb-2.5 block text-sm font-medium text-white/70">
+              <label className="mb-2 sm:mb-2.5 block text-xs sm:text-sm font-medium text-white/70">
                 Results per search
               </label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {MAX_RESULTS_OPTIONS.map((num) => (
                   <button
                     key={num}
                     onClick={() => updateConfig('maxResults', num)}
-                    className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
+                    className={`flex-1 min-w-[40px] rounded-lg py-2 min-h-[40px] text-xs sm:text-sm font-medium transition-all active:scale-95 ${
                       config.maxResults === num
                         ? 'bg-white text-black'
                         : 'border border-white/15 text-white/50 hover:border-white/30 hover:text-white/80'
@@ -201,14 +201,14 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
               </div>
             </div>
 
-            {/* Dropdowns grid */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            {/* Dropdowns grid - responsive */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-x-4 sm:gap-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">Date Range</label>
+                <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-medium text-white/70">Date Range</label>
                 <select
                   value={config.dateRange}
                   onChange={(e) => updateConfig('dateRange', e.target.value)}
-                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 min-h-[44px] text-xs sm:text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
                 >
                   {DATE_RANGE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value} className="bg-neutral-900">
@@ -219,11 +219,11 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">Duration</label>
+                <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-medium text-white/70">Duration</label>
                 <select
                   value={config.videoDuration}
                   onChange={(e) => updateConfig('videoDuration', e.target.value)}
-                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 min-h-[44px] text-xs sm:text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
                 >
                   {VIDEO_DURATION_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value} className="bg-neutral-900">
@@ -234,11 +234,11 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">Sort By</label>
+                <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-medium text-white/70">Sort By</label>
                 <select
                   value={config.order}
                   onChange={(e) => updateConfig('order', e.target.value)}
-                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 min-h-[44px] text-xs sm:text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
                 >
                   {ORDER_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value} className="bg-neutral-900">
@@ -249,11 +249,11 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">Region</label>
+                <label className="mb-1.5 sm:mb-2 block text-xs sm:text-sm font-medium text-white/70">Region</label>
                 <select
                   value={config.region}
                   onChange={(e) => updateConfig('region', e.target.value)}
-                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
+                  className="w-full rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 min-h-[44px] text-xs sm:text-sm text-white transition-colors hover:border-white/25 focus:border-white/40 focus:outline-none"
                 >
                   {REGION_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value} className="bg-neutral-900">
@@ -269,7 +269,7 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
               <button
                 onClick={handleSave}
                 disabled={!hasChanges || isSaving}
-                className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition-all hover:bg-white/90 disabled:opacity-40"
+                className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 min-h-[44px] text-xs sm:text-sm font-medium text-black transition-all hover:bg-white/90 disabled:opacity-40 active:scale-95"
               >
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

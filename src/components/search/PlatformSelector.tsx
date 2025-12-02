@@ -38,7 +38,7 @@ function PlatformCard({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 ${
+      className={`flex items-center gap-1.5 sm:gap-2 rounded-full px-3 sm:px-4 py-2 min-h-[44px] text-xs sm:text-sm font-medium transition-all duration-150 active:scale-95 ${
         isSelected
           ? 'bg-white text-black'
           : 'border border-white/10 bg-transparent text-white/60 hover:border-white/20 hover:text-white'

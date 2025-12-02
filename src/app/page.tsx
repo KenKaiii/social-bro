@@ -146,25 +146,25 @@ export default function Home() {
   if (hasSearched) {
     return (
       <>
-        <div className="min-h-screen px-4 py-8">
+        <div className="min-h-screen px-3 sm:px-4 py-4 sm:py-8">
           <div className="mx-auto max-w-7xl">
             {/* Header */}
-            <div className="mb-8 flex items-center justify-between">
+            <div className="mb-4 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <button
                   onClick={handleBackToSearch}
-                  className="mb-2 text-sm text-white/60 hover:text-white transition-colors"
+                  className="mb-2 text-xs sm:text-sm text-white/60 hover:text-white transition-colors min-h-[44px] flex items-center"
                 >
                   &larr; Back to search
                 </button>
-                <h1 className="text-2xl font-semibold text-white">
+                <h1 className="text-lg sm:text-2xl font-semibold text-white">
                   {viewingSavedSearch ? (
                     <>Saved: &ldquo;{searchQuery}&rdquo;</>
                   ) : (
                     <>Results for &ldquo;{searchQuery}&rdquo;</>
                   )}
                 </h1>
-                <p className="text-sm text-white/60 mt-1">
+                <p className="text-xs sm:text-sm text-white/60 mt-1">
                   {isSearching ? 'Searching...' : `${tableData.length} videos found`}
                 </p>
               </div>
@@ -174,7 +174,7 @@ export default function Home() {
                 <button
                   onClick={handleSaveSearch}
                   disabled={isSaving || isSaved}
-                  className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-[11px] font-medium uppercase tracking-[0.15em] transition-all duration-200 ${
+                  className={`flex items-center justify-center gap-2 rounded-lg sm:rounded-xl border px-4 py-2 min-h-[44px] text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.1em] sm:tracking-[0.15em] transition-all duration-200 active:scale-95 ${
                     isSaved
                       ? 'border-white/30 bg-white/10 text-white/70'
                       : 'border-white/20 bg-transparent text-white/70 hover:border-white/40 hover:text-white'
@@ -208,21 +208,21 @@ export default function Home() {
   return (
     <>
       {showPreLoader && <PreLoader onComplete={() => setShowPreLoader(false)} />}
-      <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="relative flex min-h-screen flex-col items-center justify-center px-3 sm:px-4">
         {/* Top Right Controls */}
-        <div className="fixed right-6 top-6 z-40 flex items-center gap-6">
+        <div className="fixed right-3 top-3 sm:right-6 sm:top-6 z-40 flex items-center gap-3 sm:gap-6">
           <UserMenu />
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white"
+            className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.1em] sm:tracking-[0.15em] text-white/50 transition-colors hover:text-white min-h-[44px] px-2"
           >
             <Settings className="h-4 w-4" />
-            Settings
+            <span className="hidden sm:inline">Settings</span>
           </button>
         </div>
 
         {/* Main content - centered */}
-        <div className="flex w-full max-w-[57.75rem] flex-col items-center gap-8">
+        <div className="flex w-full max-w-[57.75rem] flex-col items-center gap-5 sm:gap-8 pt-16 sm:pt-0">
           {/* Welcome Header */}
           <WelcomeHeader />
 
@@ -230,7 +230,7 @@ export default function Home() {
           <PlatformSelector selected={selectedPlatform} onSelect={setSelectedPlatform} />
 
           {/* Search Input */}
-          <div className="w-full max-w-2xl">
+          <div className="w-full max-w-2xl px-1 sm:px-0">
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
@@ -242,8 +242,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Previous Searches - absolute positioned at bottom */}
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center px-4">
+        {/* Previous Searches - positioned at bottom */}
+        <div className="absolute bottom-4 sm:bottom-8 left-0 right-0 flex justify-center px-3 sm:px-4">
           <PreviousSearches
             onSearchSelect={handleSearchSelect}
             onSavedSearchSelect={handleSavedSearchSelect}
