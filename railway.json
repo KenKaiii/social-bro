@@ -9,6 +9,6 @@
     "healthcheckTimeout": null,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
-    "preDeployCommand": "npx prisma migrate deploy"
+    "preDeployCommand": "prisma migrate deploy"
   }
 }
