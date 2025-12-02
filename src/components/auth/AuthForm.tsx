@@ -115,7 +115,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             disabled={isLoading}
             required
             className={cn(
-              'w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-10 pr-4',
+              'w-full rounded-xl border border-white/10 bg-[#1a1a1a] py-3 pl-10 pr-4',
               'text-white placeholder:text-white/30',
               'focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/10',
               'transition-colors duration-200',
@@ -140,7 +140,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             disabled={isLoading}
             required
             className={cn(
-              'w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-10 pr-4',
+              'w-full rounded-xl border border-white/10 bg-[#1a1a1a] py-3 pl-10 pr-4',
               'text-white placeholder:text-white/30',
               'focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/10',
               'transition-colors duration-200',
