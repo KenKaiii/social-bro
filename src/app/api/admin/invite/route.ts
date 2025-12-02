@@ -73,7 +73,7 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({
-      users: users.map((u) => ({
+      users: users.map((u: (typeof users)[number]) => ({
         ...u,
         status: u.createdAt ? 'active' : 'pending',
       })),

@@ -22,7 +22,7 @@ export async function GET() {
 
     const services: ApiKeyService[] = ['youtube', 'rapidapi'];
     const response: ApiKeyResponse[] = services.map((service) => {
-      const found = apiKeys.find((k) => k.service === service);
+      const found = apiKeys.find((k: (typeof apiKeys)[number]) => k.service === service);
       if (found) {
         const decrypted = decrypt(found.key);
         return {

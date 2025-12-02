@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import type { Platform as PlatformType } from '@/types';
-import { Platform } from '@prisma/client';
+import { Platform } from '@/generated/prisma/client';
 import { decodeHtmlEntities } from '@/lib/utils';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
 
@@ -27,12 +27,12 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform to match frontend types
-    const transformed = savedSearches.map((search) => ({
+    const transformed = savedSearches.map((search: (typeof savedSearches)[number]) => ({
       id: search.id,
       query: search.query,
       platform: search.platform as PlatformType,
       createdAt: search.createdAt.toISOString(),
-      results: search.results.map((r) => ({
+      results: search.results.map((r: (typeof search.results)[number]) => ({
         id: r.externalId,
         username: decodeHtmlEntities(r.creatorName),
         title: decodeHtmlEntities(r.title),
