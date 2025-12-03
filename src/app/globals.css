@@ -100,6 +100,17 @@
   }
 }
 
+@keyframes guideSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Utility classes */
 .animate-shimmer {
   background-size: 200% auto;
