@@ -1,8 +1,9 @@
-import { google, youtube_v3 } from 'googleapis';
 import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
-import { ApiError } from '@/lib/errors';
+import { ApiError, parseYouTubeError } from '@/lib/errors';
 import { getCachedApiKey, setCachedApiKey } from '@/lib/cache';
+
+const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 
 export async function getYouTubeApiKey(userId: string): Promise<string> {
   // Check cache first
@@ -40,10 +41,113 @@ export async function getYouTubeApiKey(userId: string): Promise<string> {
   throw new ApiError('Add YouTube API key in Settings', 'YOUTUBE_NOT_CONFIGURED', 400);
 }
 
-export async function getYouTubeClient(userId: string): Promise<youtube_v3.Youtube> {
+// YouTube API response types
+export interface YouTubeApiSearchResponse {
+  items?: Array<{
+    id?: {
+      videoId?: string;
+      channelId?: string;
+      playlistId?: string;
+    };
+    snippet?: {
+      title?: string;
+      description?: string;
+      channelTitle?: string;
+      publishedAt?: string;
+      thumbnails?: {
+        default?: { url?: string };
+        medium?: { url?: string };
+        high?: { url?: string };
+      };
+    };
+  }>;
+  pageInfo?: {
+    totalResults?: number;
+    resultsPerPage?: number;
+  };
+}
+
+export interface YouTubeApiVideosResponse {
+  items?: Array<{
+    id?: string;
+    snippet?: {
+      title?: string;
+      description?: string;
+      channelId?: string;
+      channelTitle?: string;
+      publishedAt?: string;
+      tags?: string[];
+      thumbnails?: {
+        default?: { url?: string };
+        medium?: { url?: string };
+        high?: { url?: string };
+      };
+    };
+    statistics?: {
+      viewCount?: string;
+      likeCount?: string;
+      commentCount?: string;
+    };
+    contentDetails?: {
+      duration?: string;
+    };
+  }>;
+}
+
+export interface YouTubeApiChannelsResponse {
+  items?: Array<{
+    id?: string;
+    snippet?: {
+      title?: string;
+      description?: string;
+      customUrl?: string;
+      publishedAt?: string;
+      thumbnails?: {
+        default?: { url?: string };
+        medium?: { url?: string };
+        high?: { url?: string };
+      };
+    };
+    statistics?: {
+      subscriberCount?: string;
+      videoCount?: string;
+      viewCount?: string;
+    };
+  }>;
+}
+
+// Generic YouTube API fetch function
+export async function youtubeApiFetch<T>(
+  userId: string,
+  endpoint: string,
+  params: Record<string, string | string[] | number | undefined>
+): Promise<T> {
   const apiKey = await getYouTubeApiKey(userId);
-  return google.youtube({
-    version: 'v3',
-    auth: apiKey,
+
+  const url = new URL(`${YOUTUBE_API_BASE}${endpoint}`);
+  url.searchParams.append('key', apiKey);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined) {
+      if (Array.isArray(value)) {
+        url.searchParams.append(key, value.join(','));
+      } else {
+        url.searchParams.append(key, String(value));
+      }
+    }
   });
+
+  const response = await fetch(url.toString());
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw parseYouTubeError({
+      response: {
+        status: response.status,
+        data: errorData,
+      },
+    });
+  }
+
+  return response.json() as Promise<T>;
 }

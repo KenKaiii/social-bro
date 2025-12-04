@@ -1,4 +1,4 @@
-import type { Platform, YouTubeTableData, TikTokTableData, InstagramTableData } from '@/types';
+import type { YouTubeTableData, TikTokTableData, InstagramTableData } from '@/types';
 import type { YouTubeSearchResult, YouTubeVideoDetails, YouTubeChannelDetails } from './youtube';
 import { calculateEngagement } from './utils';
 
@@ -6,28 +6,6 @@ export interface ChannelVideosResponse {
   channel: YouTubeChannelDetails;
   videos: YouTubeSearchResult[];
   videoDetails: YouTubeVideoDetails[];
-}
-
-export interface SearchResponse {
-  results: YouTubeSearchResult[];
-}
-
-export async function searchPlatform(platform: Platform, query: string): Promise<SearchResponse> {
-  switch (platform) {
-    case 'youtube': {
-      const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}&type=video`);
-      if (!response.ok) {
-        throw new Error('Failed to search YouTube');
-      }
-      return response.json();
-    }
-    case 'instagram':
-    case 'tiktok':
-      // TODO: Implement Instagram and TikTok search
-      return { results: [] };
-    default:
-      return { results: [] };
-  }
 }
 
 /**

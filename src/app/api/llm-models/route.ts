@@ -13,7 +13,15 @@ export async function GET() {
       orderBy: [{ provider: 'asc' }, { name: 'asc' }],
     });
 
-    return NextResponse.json({ models });
+    // Cache for 1 hour - models rarely change
+    return NextResponse.json(
+      { models },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=3600',
+        },
+      }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

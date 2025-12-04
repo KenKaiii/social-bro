@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMultipleVideoDetails } from '@/lib/youtube';
 import { requireUserId } from '@/lib/auth-utils';
+import { isApiError } from '@/lib/errors';
+
+const MAX_VIDEO_IDS = 50;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -24,11 +27,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No valid video IDs provided' }, { status: 400 });
     }
 
+    // Limit array size to prevent abuse
+    if (videoIds.length > MAX_VIDEO_IDS) {
+      return NextResponse.json(
+        { error: `Too many video IDs. Maximum is ${MAX_VIDEO_IDS}` },
+        { status: 400 }
+      );
+    }
+
     const videos = await getMultipleVideoDetails(userId, videoIds);
     return NextResponse.json({ videos });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
     console.error('YouTube video details error:', error);
     return NextResponse.json({ error: 'Failed to fetch video details' }, { status: 500 });

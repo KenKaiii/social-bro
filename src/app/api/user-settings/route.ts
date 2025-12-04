@@ -11,9 +11,15 @@ export async function GET() {
       where: { userId },
     });
 
-    return NextResponse.json({
-      selectedModelId: settings?.selectedModelId || null,
-    });
+    // Cache for 5 minutes - user-specific data
+    return NextResponse.json(
+      { selectedModelId: settings?.selectedModelId || null },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=300',
+        },
+      }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -28,7 +34,12 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireValidUser();
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { selectedModelId } = body as { selectedModelId?: string | null };
 
     await prisma.userSettings.upsert({

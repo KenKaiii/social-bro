@@ -3,6 +3,16 @@ import { decrypt } from '@/lib/crypto';
 import { ApiError, parseRapidApiError } from '@/lib/errors';
 import { getCachedApiKey, setCachedApiKey } from '@/lib/cache';
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+// Retryable status codes (transient errors)
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function getRapidApiKey(userId: string): Promise<string> {
   // Check cache first
   const cached = getCachedApiKey(userId, 'rapidapi');
@@ -61,20 +71,55 @@ export async function rapidApiFetch<T>(
     });
   }
 
-  const response = await fetch(url.toString(), {
-    method,
-    headers: {
-      'X-RapidAPI-Key': apiKey,
-      'X-RapidAPI-Host': host,
-      ...(body && { 'Content-Type': 'application/json' }),
-    },
-    ...(body && { body: JSON.stringify(body) }),
-  });
+  let lastError: ApiError | null = null;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw parseRapidApiError(response.status, errorText);
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(url.toString(), {
+        method,
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': host,
+          ...(body && { 'Content-Type': 'application/json' }),
+        },
+        ...(body && { body: JSON.stringify(body) }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        lastError = parseRapidApiError(response.status, errorText);
+
+        // Only retry on transient errors
+        if (RETRYABLE_STATUS_CODES.includes(response.status) && attempt < MAX_RETRIES - 1) {
+          const delay = RETRY_DELAY_MS * Math.pow(2, attempt); // Exponential backoff
+          console.warn(
+            `RapidAPI request failed with ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+          );
+          await sleep(delay);
+          continue;
+        }
+
+        throw lastError;
+      }
+
+      return response.json() as Promise<T>;
+    } catch (error) {
+      // Network errors (fetch failures)
+      if (!(error instanceof ApiError)) {
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+          console.warn(
+            `RapidAPI network error, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+          );
+          await sleep(delay);
+          continue;
+        }
+        throw new ApiError('Network error. Please check your connection.', 'NETWORK_ERROR', 503);
+      }
+      throw error;
+    }
   }
 
-  return response.json() as Promise<T>;
+  // Should not reach here, but just in case
+  throw lastError || new ApiError('Request failed after retries', 'RAPIDAPI_ERROR', 500);
 }

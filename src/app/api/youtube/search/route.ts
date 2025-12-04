@@ -3,6 +3,7 @@ import { searchYouTube } from '@/lib/youtube';
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-utils';
 import { isApiError } from '@/lib/errors';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // Helper to calculate publishedAfter date from dateRange
 function getPublishedAfterDate(dateRange: string): string | undefined {
@@ -39,6 +40,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const userId = await requireUserId();
+
+    // Rate limit search requests
+    const rateLimit = checkRateLimit(`youtube-search:${userId}`, RATE_LIMITS.search);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      );
+    }
 
     // Fetch user-specific config from database
     const defaultConfig = {

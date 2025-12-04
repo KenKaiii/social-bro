@@ -258,4 +258,5 @@ model Script {
   @@index([status])
   @@index([createdAt])
   @@index([repurposeVideoId])
+  @@index([sourceUrl, userId])
 }

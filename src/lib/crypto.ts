@@ -1,8 +1,25 @@
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync, createHash } from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
+const SALT_LENGTH = 16;
+
+// Derive a deterministic salt from the secret itself
+// This ensures existing encrypted data can still be decrypted
+// while avoiding the security issue of a hardcoded salt string
+function getSalt(): Buffer {
+  const secret = process.env.ENCRYPTION_SECRET;
+  if (!secret) {
+    throw new Error(
+      'ENCRYPTION_SECRET environment variable is required. ' +
+        'Generate one with: openssl rand -base64 32'
+    );
+  }
+  // Use first 16 bytes of SHA-256 hash of the secret as salt
+  // This is deterministic but unique per secret
+  return createHash('sha256').update(secret).digest().subarray(0, SALT_LENGTH);
+}
 
 function getEncryptionKey(): Buffer {
   const secret = process.env.ENCRYPTION_SECRET;
@@ -12,7 +29,7 @@ function getEncryptionKey(): Buffer {
         'Generate one with: openssl rand -base64 32'
     );
   }
-  return scryptSync(secret, 'salt', KEY_LENGTH);
+  return scryptSync(secret, getSalt(), KEY_LENGTH);
 }
 
 export function encrypt(text: string): string {
