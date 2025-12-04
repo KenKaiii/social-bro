@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getYouTubeTranscript } from '@/lib/rapidapi';
+import { getYouTubeTranscriptFast } from '@/lib/rapidapi';
 import { requireValidUser } from '@/lib/auth-utils';
 import { isApiError } from '@/lib/errors';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract transcript
-    const result = await getYouTubeTranscript({
+    const result = await getYouTubeTranscriptFast({
       userId,
       videoUrl: repurposeVideo.url,
       lang,

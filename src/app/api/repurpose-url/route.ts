@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getYouTubeTranscript } from '@/lib/rapidapi';
+import { getYouTubeTranscriptFast } from '@/lib/rapidapi';
 import { repurposeTranscript, type ProgressUpdate } from '@/lib/repurpose';
 import { requireValidUser } from '@/lib/auth-utils';
 import { isApiError } from '@/lib/errors';
@@ -146,7 +146,7 @@ async function handleStreamingRequest(request: NextRequest) {
       // Get video title and transcript
       const [videoTitle, transcriptResult] = await Promise.all([
         getYouTubeTitle(url),
-        getYouTubeTranscript({ userId, videoUrl: url, lang }),
+        getYouTubeTranscriptFast({ userId, videoUrl: url, lang }),
       ]);
 
       // Create script record
@@ -284,7 +284,7 @@ async function handleNonStreamingRequest(request: NextRequest) {
     // Get video title and extract transcript in parallel
     const [videoTitle, transcriptResult] = await Promise.all([
       getYouTubeTitle(url),
-      getYouTubeTranscript({
+      getYouTubeTranscriptFast({
         userId,
         videoUrl: url,
         lang,

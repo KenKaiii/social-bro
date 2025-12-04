@@ -32,3 +32,10 @@ export {
   type TranscriptOptions,
   type TranscriptResult,
 } from './youtube-transcript';
+
+// YouTube Transcript Fast
+export {
+  getYouTubeTranscriptFast,
+  type TranscriptFastOptions,
+  type TranscriptFastResult,
+} from './youtube-transcript-fast';

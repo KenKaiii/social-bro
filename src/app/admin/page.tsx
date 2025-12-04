@@ -147,11 +147,7 @@ export default function AdminPage() {
                   'flex items-center gap-2'
                 )}
               >
-                {isVerifying ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Verify'
-                )}
+                {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
               </button>
             </div>
           </form>
