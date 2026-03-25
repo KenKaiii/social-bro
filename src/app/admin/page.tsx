@@ -2,7 +2,17 @@
 
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Loader2, UserPlus, Copy, Check, Users, RefreshCw } from 'lucide-react';
+import {
+  Loader2,
+  UserPlus,
+  Copy,
+  Check,
+  Users,
+  RefreshCw,
+  KeyRound,
+  Pencil,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -24,6 +34,12 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [resetLink, setResetLink] = useState('');
+  const [resetCopied, setResetCopied] = useState(false);
+  const [resettingUserId, setResettingUserId] = useState<string | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   const fetchUsers = useCallback(async (secret: string) => {
     if (!secret) return false;
@@ -98,11 +114,91 @@ export default function AdminPage() {
     }
   };
 
+  const handleResetPassword = async (userId: string, userEmail: string) => {
+    if (!confirm(`Reset password for ${userEmail}? This will invalidate their current password.`)) {
+      return;
+    }
+
+    setResettingUserId(userId);
+    setResetLink('');
+
+    try {
+      const res = await fetch('/api/admin/invite', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminSecret}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to reset password');
+        return;
+      }
+
+      toast.success(`Password reset for ${userEmail}`);
+      setResetLink(data.resetUrl);
+      fetchUsers(adminSecret);
+    } catch {
+      toast.error('Failed to reset password');
+    } finally {
+      setResettingUserId(null);
+    }
+  };
+
+  const handleSetPassword = async (userId: string) => {
+    if (!newPassword) return;
+
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    setIsSavingPassword(true);
+
+    try {
+      const res = await fetch('/api/admin/set-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminSecret}`,
+        },
+        body: JSON.stringify({ userId, password: newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to set password');
+        return;
+      }
+
+      toast.success(`Password updated for ${data.email}`);
+      setEditingUserId(null);
+      setNewPassword('');
+      fetchUsers(adminSecret);
+    } catch {
+      toast.error('Failed to set password');
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
+
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     toast.success('Copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyResetLink = async () => {
+    await navigator.clipboard.writeText(resetLink);
+    setResetCopied(true);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setResetCopied(false), 2000);
   };
 
   return (
@@ -255,29 +351,140 @@ export default function AdminPage() {
               ) : users.length === 0 ? (
                 <p className="text-white/40 text-center py-8">No users yet</p>
               ) : (
-                <div className="space-y-2">
-                  {users.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5"
-                    >
-                      <div>
-                        <p className="text-white">{user.email}</p>
-                        {user.name && <p className="text-xs text-white/40">{user.name}</p>}
-                      </div>
-                      <span
-                        className={cn(
-                          'text-xs px-2 py-1 rounded-full',
-                          user.status === 'active'
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-yellow-500/20 text-yellow-400'
-                        )}
+                <>
+                  <div className="space-y-2">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className="rounded-xl bg-white/[0.03] border border-white/5"
                       >
-                        {user.status}
-                      </span>
+                        <div className="flex items-center justify-between p-3">
+                          <div>
+                            <p className="text-white">{user.email}</p>
+                            {user.name && <p className="text-xs text-white/40">{user.name}</p>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                if (editingUserId === user.id) {
+                                  setEditingUserId(null);
+                                  setNewPassword('');
+                                } else {
+                                  setEditingUserId(user.id);
+                                  setNewPassword('');
+                                }
+                              }}
+                              className={cn(
+                                'p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors',
+                                editingUserId === user.id && 'bg-white/10'
+                              )}
+                              title="Set password"
+                            >
+                              {editingUserId === user.id ? (
+                                <X className="h-3.5 w-3.5 text-white/40" />
+                              ) : (
+                                <Pencil className="h-3.5 w-3.5 text-white/40" />
+                              )}
+                            </button>
+                            {user.status === 'active' && (
+                              <button
+                                onClick={() => handleResetPassword(user.id, user.email)}
+                                disabled={resettingUserId === user.id}
+                                className={cn(
+                                  'p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors',
+                                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                                )}
+                                title="Generate reset link"
+                              >
+                                {resettingUserId === user.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin text-white/40" />
+                                ) : (
+                                  <KeyRound className="h-3.5 w-3.5 text-white/40" />
+                                )}
+                              </button>
+                            )}
+                            <span
+                              className={cn(
+                                'text-xs px-2 py-1 rounded-full',
+                                user.status === 'active'
+                                  ? 'bg-green-500/20 text-green-400'
+                                  : 'bg-yellow-500/20 text-yellow-400'
+                              )}
+                            >
+                              {user.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {editingUserId === user.id && (
+                          <div className="px-3 pb-3">
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSetPassword(user.id);
+                              }}
+                              className="flex gap-2"
+                            >
+                              <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="New password (min 8 chars)"
+                                disabled={isSavingPassword}
+                                autoFocus
+                                className={cn(
+                                  'flex-1 rounded-lg border border-white/10 bg-white/[0.03] py-2 px-3',
+                                  'text-sm text-white placeholder:text-white/30',
+                                  'focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/10',
+                                  'disabled:opacity-50'
+                                )}
+                              />
+                              <button
+                                type="submit"
+                                disabled={isSavingPassword || !newPassword}
+                                className={cn(
+                                  'rounded-lg border border-white/20 bg-white/10 py-2 px-4',
+                                  'text-xs font-medium text-white',
+                                  'hover:bg-white/20 hover:border-white/30',
+                                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                                  'flex items-center gap-1.5'
+                                )}
+                              >
+                                {isSavingPassword ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Check className="h-3 w-3" />
+                                )}
+                                Save
+                              </button>
+                            </form>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {resetLink && (
+                    <div className="mt-4 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                      <p className="text-xs text-orange-400 mb-2">Password reset link:</p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-sm text-white/80 bg-black/20 p-2 rounded overflow-x-auto">
+                          {resetLink}
+                        </code>
+                        <button
+                          onClick={copyResetLink}
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                        >
+                          {resetCopied ? (
+                            <Check className="h-4 w-4 text-orange-400" />
+                          ) : (
+                            <Copy className="h-4 w-4 text-white/60" />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </>

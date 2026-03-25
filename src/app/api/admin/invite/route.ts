@@ -70,6 +70,63 @@ export async function POST(request: Request) {
   }
 }
 
+// Reset password for an existing user (generates new invite token)
+export async function PATCH(request: Request) {
+  try {
+    const adminSecret = validateAdminSecret();
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${adminSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    const { userId } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Generate a new invite token and clear password
+    const inviteToken = randomBytes(32).toString('hex');
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        inviteToken,
+        password: null,
+      },
+    });
+
+    const baseUrl = process.env.NEXTAUTH_URL;
+    if (!baseUrl) {
+      throw new Error('NEXTAUTH_URL environment variable must be configured');
+    }
+    const resetUrl = `${baseUrl}/set-password?token=${inviteToken}`;
+
+    return NextResponse.json({
+      email: user.email,
+      resetUrl,
+      message: 'Password reset. Share the reset URL with the user.',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return NextResponse.json({ error: 'Failed to reset password' }, { status: 500 });
+  }
+}
+
 // List all invited users (for admin)
 export async function GET(request: Request) {
   try {
