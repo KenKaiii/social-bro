@@ -3,7 +3,7 @@ import { getChannelVideosByUsername } from '@/lib/youtube';
 import { getMultipleVideoDetails } from '@/lib/youtube';
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-utils';
-import { isApiError } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -48,13 +48,6 @@ export async function GET(request: NextRequest) {
       videoDetails,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('Error fetching channel videos:', error);
-    return NextResponse.json({ error: 'Failed to fetch channel videos' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch channel videos');
   }
 }

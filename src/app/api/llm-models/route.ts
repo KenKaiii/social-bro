@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { fetchOpenRouterModels } from '@/lib/openrouter';
 import { requireUserId } from '@/lib/auth-utils';
-import { isApiError } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 
 // GET - Fetch all synced LLM models
 export async function GET() {
@@ -23,11 +23,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error fetching LLM models:', error);
-    return NextResponse.json({ error: 'Failed to fetch models' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch models');
   }
 }
 
@@ -90,13 +86,6 @@ export async function POST(_request: NextRequest) {
       message: `Synced ${synced} models from OpenRouter`,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('Error syncing LLM models:', error);
-    return NextResponse.json({ error: 'Failed to sync models' }, { status: 500 });
+    return handleApiError(error, 'Failed to sync models');
   }
 }

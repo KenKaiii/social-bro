@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '@/lib/auth-utils';
 import { repurposeScriptById } from '@/lib/repurpose';
-import { isApiError } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 interface RouteParams {
@@ -32,21 +32,6 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       chunksProcessed: result.chunksProcessed,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Script not found') {
-        return NextResponse.json({ error: 'Script not found' }, { status: 404 });
-      }
-      if (error.message.includes('No LLM model selected')) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('Error repurposing script:', error);
-    return NextResponse.json({ error: 'Failed to repurpose script' }, { status: 500 });
+    return handleApiError(error, 'Failed to repurpose script');
   }
 }

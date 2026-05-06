@@ -122,14 +122,6 @@ const GUIDE_CONTENT: Record<ApiKeyService, GuideContent> = {
         link: { url: 'https://rapidapi.com/Lundehund/api/tiktok-api23/', text: 'TikTok API' },
       },
       {
-        title: 'Subscribe to Transcript API',
-        description: 'Visit the YouTube Transcribe page and subscribe to the free plan.',
-        link: {
-          url: 'https://rapidapi.com/Reza-Rg/api/youtube-transcribe-fastest-youtube-transcriber/',
-          text: 'Transcript API',
-        },
-      },
-      {
         title: 'Copy your API key',
         description: 'On any API page, find "X-RapidAPI-Key" in code snippets. Copy and paste it.',
       },
@@ -237,6 +229,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch on open
       fetchApiKeys();
       fetchLlmModels();
       fetchUserSettings();

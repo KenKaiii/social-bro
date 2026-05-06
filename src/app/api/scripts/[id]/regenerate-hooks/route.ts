@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '@/lib/auth-utils';
+import { handleApiError } from '@/lib/api-error';
 import { prisma } from '@/lib/db';
 import { createChatCompletion } from '@/lib/openrouter';
 import { HOOKS_SYSTEM_PROMPT, HOOKS_PROMPT } from '@/lib/repurpose/prompts';
@@ -85,7 +86,6 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       hooks,
     });
   } catch (error) {
-    console.error('Error regenerating hooks:', error);
-    return NextResponse.json({ error: 'Failed to regenerate hooks' }, { status: 500 });
+    return handleApiError(error, 'Failed to regenerate hooks');
   }
 }

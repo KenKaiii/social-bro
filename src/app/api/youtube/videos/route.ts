@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMultipleVideoDetails } from '@/lib/youtube';
 import { requireUserId } from '@/lib/auth-utils';
-import { isApiError } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 
 const MAX_VIDEO_IDS = 50;
 
@@ -38,13 +38,6 @@ export async function GET(request: NextRequest) {
     const videos = await getMultipleVideoDetails(userId, videoIds);
     return NextResponse.json({ videos });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('YouTube video details error:', error);
-    return NextResponse.json({ error: 'Failed to fetch video details' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch video details');
   }
 }

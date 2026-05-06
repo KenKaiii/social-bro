@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getYouTubeTranscriptFast } from '@/lib/rapidapi';
+import { getYouTubeTranscript } from '@/lib/youtube';
 import { repurposeTranscript, type ProgressUpdate } from '@/lib/repurpose';
 import { requireValidUser } from '@/lib/auth-utils';
-import { isApiError } from '@/lib/errors';
+import { getErrorMessage } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // Force dynamic rendering and disable buffering
@@ -146,7 +147,7 @@ async function handleStreamingRequest(request: NextRequest) {
       // Get video title and transcript
       const [videoTitle, transcriptResult] = await Promise.all([
         getYouTubeTitle(url),
-        getYouTubeTranscriptFast({ userId, videoUrl: url, lang }),
+        getYouTubeTranscript({ videoUrl: url, lang }),
       ]);
 
       // Create script record
@@ -203,24 +204,8 @@ async function handleStreamingRequest(request: NextRequest) {
 
       await writer.close();
     } catch (error) {
-      let errorMessage = 'Failed to repurpose';
-
-      if (error instanceof Error) {
-        if (error.message === 'Unauthorized' || error.message === 'InvalidSession') {
-          errorMessage = error.message;
-        } else if (error.message.includes('No LLM model selected')) {
-          errorMessage = error.message;
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      if (isApiError(error)) {
-        errorMessage = error.message;
-      }
-
       console.error('Error repurposing URL:', error);
-      await writeEvent('error', { error: errorMessage });
+      await writeEvent('error', { error: getErrorMessage(error, 'Failed to repurpose') });
       await writer.close();
     }
   })();
@@ -284,8 +269,7 @@ async function handleNonStreamingRequest(request: NextRequest) {
     // Get video title and extract transcript in parallel
     const [videoTitle, transcriptResult] = await Promise.all([
       getYouTubeTitle(url),
-      getYouTubeTranscriptFast({
-        userId,
+      getYouTubeTranscript({
         videoUrl: url,
         lang,
       }),
@@ -336,27 +320,6 @@ async function handleNonStreamingRequest(request: NextRequest) {
       alreadyExists: false,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-      if (error.message.includes('No LLM model selected')) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('Error repurposing URL:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to repurpose' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to repurpose');
   }
 }

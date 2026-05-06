@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { encrypt, decrypt, maskApiKey } from '@/lib/crypto';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
 import { invalidateCachedApiKey } from '@/lib/cache';
+import { handleApiError } from '@/lib/api-error';
 
 export type ApiKeyService = 'youtube' | 'rapidapi' | 'openrouter';
 
@@ -57,11 +58,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Failed to fetch API keys:', error);
-    return NextResponse.json({ error: 'Failed to fetch API keys' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch API keys');
   }
 }
 
@@ -106,19 +103,7 @@ export async function POST(request: Request) {
       maskedKey: maskApiKey(key),
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    console.error('Failed to save API key:', error);
-    return NextResponse.json({ error: 'Failed to save API key' }, { status: 500 });
+    return handleApiError(error, 'Failed to save API key');
   }
 }
 
@@ -161,10 +146,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Failed to delete API key:', error);
-    return NextResponse.json({ error: 'Failed to delete API key' }, { status: 500 });
+    return handleApiError(error, 'Failed to delete API key');
   }
 }

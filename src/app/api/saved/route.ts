@@ -4,6 +4,7 @@ import type { Platform as PlatformType } from '@/types';
 import { Platform } from '@/generated/prisma/client';
 import { decodeHtmlEntities } from '@/lib/utils';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
+import { handleApiError } from '@/lib/api-error';
 
 // GET - Fetch all saved searches for current user with pagination
 export async function GET(request: NextRequest) {
@@ -50,11 +51,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ savedSearches: transformed });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error fetching saved searches:', error);
-    return NextResponse.json({ error: 'Failed to fetch saved searches' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch saved searches');
   }
 }
 
@@ -149,19 +146,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    console.error('Error saving search:', error);
-    return NextResponse.json({ error: 'Failed to save search' }, { status: 500 });
+    return handleApiError(error, 'Failed to save search');
   }
 }
 
@@ -192,10 +177,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error deleting saved search:', error);
-    return NextResponse.json({ error: 'Failed to delete saved search' }, { status: 500 });
+    return handleApiError(error, 'Failed to delete saved search');
   }
 }

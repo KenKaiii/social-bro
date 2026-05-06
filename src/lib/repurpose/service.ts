@@ -4,6 +4,7 @@
 
 import { createChatCompletion } from '@/lib/openrouter';
 import { prisma } from '@/lib/db';
+import { ApiError } from '@/lib/errors';
 import {
   REPURPOSE_SYSTEM_PROMPT,
   REPURPOSE_FIRST_CHUNK_PROMPT,
@@ -44,7 +45,11 @@ async function getUserModel(userId: string): Promise<string> {
   });
 
   if (!settings?.selectedModelId) {
-    throw new Error('No LLM model selected. Please select a model in Settings.');
+    throw new ApiError(
+      'No AI model selected. Pick one in Settings to repurpose content.',
+      'NO_MODEL_SELECTED',
+      400
+    );
   }
 
   return settings.selectedModelId;
@@ -155,6 +160,10 @@ export async function repurposeTranscript(
     await onProgress?.({ step: 'generating_hooks', message: 'Generated engagement hooks' });
     return hooks;
   });
+  // Attach a no-op handler so a rejection here doesn't surface as an
+  // unhandledRejection if chunk processing throws before we reach the await
+  // below. The await still re-throws the original error when reached.
+  hooksPromise.catch(() => {});
 
   // Process chunks sequentially to maintain flow
   const repurposedParts: string[] = [];
@@ -213,7 +222,7 @@ export async function repurposeScriptById(
   });
 
   if (!script) {
-    throw new Error('Script not found');
+    throw new ApiError('Script not found', 'SCRIPT_NOT_FOUND', 404);
   }
 
   if (script.userId !== userId) {

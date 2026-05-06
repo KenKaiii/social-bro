@@ -22,6 +22,7 @@ import {
 } from '@/components/data-table';
 import { SettingsModal } from '@/components/settings';
 import { UserMenu } from '@/components/auth';
+import { getErrorMessage } from '@/lib/errors';
 import {
   searchYouTubeWithDetails,
   searchTikTokWithDetails,
@@ -125,7 +126,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Search failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Search failed');
+      toast.error(getErrorMessage(error, 'Search failed'));
     } finally {
       setIsSearching(false);
     }
@@ -516,7 +517,7 @@ export default function Home() {
         reader.releaseLock();
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to repurpose');
+      toast.error(getErrorMessage(error, 'Failed to repurpose'));
     } finally {
       setIsProcessing(false);
       setProcessingStatus('');

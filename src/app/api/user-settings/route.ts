@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
+import { handleApiError } from '@/lib/api-error';
 
 // GET - Fetch user settings
 export async function GET() {
@@ -21,11 +22,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error fetching user settings:', error);
-    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch settings');
   }
 }
 
@@ -50,18 +47,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, selectedModelId });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    console.error('Error updating user settings:', error);
-    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+    return handleApiError(error, 'Failed to update settings');
   }
 }

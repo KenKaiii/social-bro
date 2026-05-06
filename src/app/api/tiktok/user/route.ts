@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserPosts, transformUserPostsToTableData } from '@/lib/rapidapi';
 import { requireUserId } from '@/lib/auth-utils';
+import { handleApiError } from '@/lib/api-error';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -22,13 +23,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results: tableData });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error instanceof Error && error.message.includes('RapidAPI key not configured')) {
-      return NextResponse.json({ error: 'RapidAPI key not configured' }, { status: 400 });
-    }
-    console.error('TikTok user posts error:', error);
-    return NextResponse.json({ error: 'Failed to fetch TikTok user posts' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch TikTok user posts');
   }
 }

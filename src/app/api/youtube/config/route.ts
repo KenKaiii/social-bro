@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
+import { handleApiError } from '@/lib/api-error';
 
 export interface YouTubeConfigData {
   maxResults: number;
@@ -145,18 +146,6 @@ export async function POST(request: NextRequest) {
       order: config.order,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    console.error('Failed to save YouTube config:', error);
-    return NextResponse.json({ error: 'Failed to save configuration' }, { status: 500 });
+    return handleApiError(error, 'Failed to save configuration');
   }
 }

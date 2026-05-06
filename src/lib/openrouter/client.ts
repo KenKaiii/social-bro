@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
-import { ApiError } from '@/lib/errors';
+import { ApiError, parseOpenRouterError } from '@/lib/errors';
 import { getCachedApiKey, setCachedApiKey } from '@/lib/cache';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
@@ -73,11 +73,7 @@ export async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new ApiError(
-      `Failed to fetch models: ${errorText}`,
-      'OPENROUTER_API_ERROR',
-      response.status
-    );
+    throw parseOpenRouterError(response.status, errorText);
   }
 
   const data: OpenRouterModelsResponse = await response.json();
@@ -142,11 +138,7 @@ export async function createChatCompletion({
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new ApiError(
-      `OpenRouter API error: ${errorText}`,
-      'OPENROUTER_API_ERROR',
-      response.status
-    );
+    throw parseOpenRouterError(response.status, errorText);
   }
 
   return response.json();

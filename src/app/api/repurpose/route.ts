@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import type { Platform as PlatformType } from '@/types';
 import { Platform } from '@/generated/prisma/client';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
+import { handleApiError } from '@/lib/api-error';
 
 // GET - Fetch all repurpose videos for current user
 export async function GET(request: NextRequest) {
@@ -46,11 +47,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ videos: transformed });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error fetching repurpose videos:', error);
-    return NextResponse.json({ error: 'Failed to fetch repurpose videos' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch repurpose videos');
   }
 }
 
@@ -144,19 +141,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    console.error('Error saving repurpose video:', error);
-    return NextResponse.json({ error: 'Failed to save video' }, { status: 500 });
+    return handleApiError(error, 'Failed to save video');
   }
 }
 
@@ -187,10 +172,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error deleting repurpose video:', error);
-    return NextResponse.json({ error: 'Failed to delete video' }, { status: 500 });
+    return handleApiError(error, 'Failed to delete video');
   }
 }

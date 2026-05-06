@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getYouTubeTranscriptFast } from '@/lib/rapidapi';
+import { getYouTubeTranscript } from '@/lib/youtube';
 import { requireValidUser } from '@/lib/auth-utils';
-import { isApiError } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // POST - Extract transcript from a repurpose video and save as script
@@ -72,9 +72,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Extract transcript
-    const result = await getYouTubeTranscriptFast({
-      userId,
+    // Extract transcript directly from YouTube's Innertube API (no API key needed)
+    const result = await getYouTubeTranscript({
       videoUrl: repurposeVideo.url,
       lang,
     });
@@ -105,24 +104,6 @@ export async function POST(request: NextRequest) {
       alreadyExists: false,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('Error extracting transcript:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to extract transcript' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to extract transcript');
   }
 }

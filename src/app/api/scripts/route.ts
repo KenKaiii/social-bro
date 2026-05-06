@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
+import { handleApiError } from '@/lib/api-error';
 
 // GET - Fetch all scripts for current user
 export async function GET(request: NextRequest) {
@@ -38,11 +39,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ scripts: transformed });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error fetching scripts:', error);
-    return NextResponse.json({ error: 'Failed to fetch scripts' }, { status: 500 });
+    return handleApiError(error, 'Failed to fetch scripts');
   }
 }
 
@@ -94,19 +91,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    console.error('Error creating script:', error);
-    return NextResponse.json({ error: 'Failed to create script' }, { status: 500 });
+    return handleApiError(error, 'Failed to create script');
   }
 }
 
@@ -168,19 +153,7 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'InvalidSession') {
-        return NextResponse.json(
-          { error: 'Session invalid. Please log out and log in again.' },
-          { status: 401 }
-        );
-      }
-    }
-    console.error('Error updating script:', error);
-    return NextResponse.json({ error: 'Failed to update script' }, { status: 500 });
+    return handleApiError(error, 'Failed to update script');
   }
 }
 
@@ -211,10 +184,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    console.error('Error deleting script:', error);
-    return NextResponse.json({ error: 'Failed to delete script' }, { status: 500 });
+    return handleApiError(error, 'Failed to delete script');
   }
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchYouTube } from '@/lib/youtube';
 import { prisma } from '@/lib/db';
 import { requireUserId } from '@/lib/auth-utils';
-import { isApiError } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 // Helper to calculate publishedAfter date from dateRange
@@ -92,13 +92,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('YouTube search error:', error);
-    return NextResponse.json({ error: 'Failed to search YouTube' }, { status: 500 });
+    return handleApiError(error, 'Failed to search YouTube');
   }
 }

@@ -123,6 +123,87 @@ export function parseYouTubeError(error: unknown): ApiError {
 }
 
 /**
+ * Parse OpenRouter error response and return user-friendly message.
+ * OpenRouter returns errors as `{ error: { message, code } }`.
+ */
+export function parseOpenRouterError(status: number, responseText: string): ApiError {
+  let upstreamMessage = '';
+  try {
+    const json = JSON.parse(responseText);
+    upstreamMessage = json?.error?.message || json?.message || '';
+  } catch {
+    upstreamMessage = responseText;
+  }
+
+  const lower = upstreamMessage.toLowerCase();
+
+  switch (status) {
+    case 401:
+      return new ApiError(
+        'Invalid OpenRouter API key. Update it in Settings.',
+        'OPENROUTER_INVALID_KEY',
+        401
+      );
+    case 402:
+      return new ApiError(
+        'OpenRouter credits exhausted. Top up at openrouter.ai/settings/credits.',
+        'OPENROUTER_INSUFFICIENT_CREDITS',
+        402
+      );
+    case 403:
+      return new ApiError(
+        'OpenRouter access forbidden — your key may lack permission for this model.',
+        'OPENROUTER_FORBIDDEN',
+        403
+      );
+    case 404:
+      return new ApiError(
+        'Selected model is unavailable. Pick a different model in Settings.',
+        'OPENROUTER_MODEL_NOT_FOUND',
+        404
+      );
+    case 408:
+    case 504:
+      return new ApiError(
+        'OpenRouter request timed out. Please try again.',
+        'OPENROUTER_TIMEOUT',
+        status
+      );
+    case 429:
+      if (lower.includes('credit') || lower.includes('insufficient')) {
+        return new ApiError(
+          'OpenRouter credits exhausted. Top up at openrouter.ai/settings/credits.',
+          'OPENROUTER_INSUFFICIENT_CREDITS',
+          402
+        );
+      }
+      return new ApiError(
+        'OpenRouter rate limit hit. Please try again in a moment.',
+        'OPENROUTER_RATE_LIMIT',
+        429
+      );
+    case 502:
+    case 503:
+      return new ApiError(
+        'OpenRouter is temporarily unavailable. Try again shortly.',
+        'OPENROUTER_UNAVAILABLE',
+        status
+      );
+    default: {
+      if (lower.includes('insufficient') && lower.includes('credit')) {
+        return new ApiError(
+          'OpenRouter credits exhausted. Top up at openrouter.ai/settings/credits.',
+          'OPENROUTER_INSUFFICIENT_CREDITS',
+          402
+        );
+      }
+      const shortMsg = upstreamMessage.slice(0, 140) || 'OpenRouter request failed';
+      return new ApiError(shortMsg, 'OPENROUTER_ERROR', status);
+    }
+  }
+}
+
+/**
  * Check if error is an ApiError
  */
 export function isApiError(error: unknown): error is ApiError {
@@ -130,19 +211,72 @@ export function isApiError(error: unknown): error is ApiError {
 }
 
 /**
- * Get user-friendly error message from any error
+ * Strip noisy patterns out of an upstream error message so it's safe to
+ * surface to a user (no raw JSON, no provider prefixes, sensible length).
  */
-export function getErrorMessage(error: unknown): string {
+function sanitizeMessage(raw: string): string {
+  let msg = raw.trim();
+
+  // Pattern: "OpenRouter API error: {\"error\":{...}}" → extract inner message.
+  const jsonStart = msg.indexOf('{');
+  if (jsonStart >= 0 && msg.lastIndexOf('}') > jsonStart) {
+    const candidate = msg.slice(jsonStart);
+    try {
+      const parsed = JSON.parse(candidate);
+      const inner =
+        parsed?.error?.message ||
+        parsed?.message ||
+        parsed?.error ||
+        parsed?.detail ||
+        '';
+      if (typeof inner === 'string' && inner.trim()) {
+        msg = inner.trim();
+      } else {
+        // JSON but no obvious message — drop the JSON blob
+        msg = msg.slice(0, jsonStart).trim().replace(/[:\-\s]+$/, '');
+      }
+    } catch {
+      // Not valid JSON — drop everything from the brace onwards
+      msg = msg.slice(0, jsonStart).trim().replace(/[:\-\s]+$/, '');
+    }
+  }
+
+  // Strip common provider prefixes like "OpenRouter API error: foo"
+  msg = msg.replace(/^[A-Za-z][\w\s]*?\s*API\s*error\s*:\s*/i, '');
+
+  // Collapse whitespace
+  msg = msg.replace(/\s+/g, ' ').trim();
+
+  if (!msg) return 'An unexpected error occurred';
+
+  // Keep it to one sentence-ish (first 160 chars, snap to sentence end)
+  if (msg.length > 160) {
+    const truncated = msg.slice(0, 160);
+    const lastStop = Math.max(
+      truncated.lastIndexOf('. '),
+      truncated.lastIndexOf('! '),
+      truncated.lastIndexOf('? ')
+    );
+    msg = lastStop > 60 ? truncated.slice(0, lastStop + 1) : truncated + '\u2026';
+  }
+
+  return msg;
+}
+
+/**
+ * Get user-friendly error message from any error.
+ */
+export function getErrorMessage(error: unknown, fallback = 'An unexpected error occurred'): string {
   if (isApiError(error)) {
     return error.message;
   }
   if (error instanceof Error) {
-    // Check for common patterns and shorten
-    const msg = error.message;
-    if (msg.includes('API key not configured')) {
-      return msg.split('.')[0]; // Just first sentence
-    }
-    return msg.slice(0, 100);
+    return sanitizeMessage(error.message) || fallback;
   }
-  return 'An unexpected error occurred';
+  if (typeof error === 'string') {
+    return sanitizeMessage(error) || fallback;
+  }
+  return fallback;
 }
+
+

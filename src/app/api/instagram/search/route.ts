@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchInstagram, getUserReels, transformReelsToTableData } from '@/lib/rapidapi';
 import { requireUserId } from '@/lib/auth-utils';
-import { isApiError } from '@/lib/errors';
+import { handleApiError } from '@/lib/api-error';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
@@ -55,13 +55,6 @@ export async function GET(request: NextRequest) {
       results: tableData,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode });
-    }
-    console.error('Instagram search error:', error);
-    return NextResponse.json({ error: 'Failed to search Instagram' }, { status: 500 });
+    return handleApiError(error, 'Failed to search Instagram');
   }
 }
