@@ -47,6 +47,7 @@
     "eslint-config-next": "^16.0.10",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "picomatch": "^4.0.4",
     "prettier": "^3.7.3",
     "prisma": "^7.0.1",
     "tailwindcss": "^4",
