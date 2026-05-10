@@ -29,35 +29,32 @@ export interface TikTokSearchOptions {
   cursor?: number;
 }
 
-interface TikTokApiSearchItem {
-  type: number;
-  item?: {
-    id: string;
-    desc: string;
-    createTime: number;
-    author?: {
-      uniqueId: string;
-      nickname: string;
-      avatarThumb: string;
-    };
-    stats?: {
-      playCount: number;
-      diggCount: number;
-      commentCount: number;
-      shareCount: number;
-      collectCount: number;
-    };
-    video?: {
-      cover: string;
-      duration: number;
-      playAddr: string;
-    };
+interface TikTokApiVideoItem {
+  id: string;
+  desc: string;
+  createTime: number;
+  author?: {
+    uniqueId: string;
+    nickname: string;
+    avatarThumb: string;
+  };
+  stats?: {
+    playCount: number;
+    diggCount: number;
+    commentCount: number;
+    shareCount: number;
+    collectCount: number;
+  };
+  video?: {
+    cover: string;
+    duration: number;
+    playAddr: string;
   };
 }
 
 interface TikTokApiSearchResponse {
-  status_code: number;
-  data: TikTokApiSearchItem[];
+  status_code?: number;
+  item_list?: TikTokApiVideoItem[];
   cursor?: number;
   has_more?: boolean;
   search_id?: string;
@@ -70,7 +67,7 @@ export async function searchTikTok({
 }: TikTokSearchOptions): Promise<TikTokSearchResult[]> {
   const response = await rapidApiFetch<TikTokApiSearchResponse>(userId, {
     host: TIKTOK_HOST,
-    endpoint: '/api/search/general',
+    endpoint: '/api/search/video',
     params: {
       keyword,
       cursor: cursor.toString(),
@@ -78,33 +75,28 @@ export async function searchTikTok({
     },
   });
 
-  if (response.status_code !== 0 || !response.data) {
+  if (!response.item_list?.length) {
     return [];
   }
 
-  return response.data
-    .filter((item) => item.type === 1 && item.item)
-    .map((item) => {
-      const video = item.item!;
-      return {
-        id: video.id,
-        description: video.desc || '',
-        thumbnail: video.video?.cover || '',
-        duration: video.video?.duration || 0,
-        videoUrl: `https://www.tiktok.com/@${video.author?.uniqueId || ''}/video/${video.id}`,
-        author: {
-          username: video.author?.uniqueId || '',
-          nickname: video.author?.nickname || '',
-          avatar: video.author?.avatarThumb || '',
-        },
-        stats: {
-          plays: video.stats?.playCount || 0,
-          likes: video.stats?.diggCount || 0,
-          comments: video.stats?.commentCount || 0,
-          shares: video.stats?.shareCount || 0,
-          saves: video.stats?.collectCount || 0,
-        },
-        createdAt: new Date(video.createTime * 1000).toISOString(),
-      };
-    });
+  return response.item_list.map((video) => ({
+    id: video.id,
+    description: video.desc || '',
+    thumbnail: video.video?.cover || '',
+    duration: video.video?.duration || 0,
+    videoUrl: `https://www.tiktok.com/@${video.author?.uniqueId || ''}/video/${video.id}`,
+    author: {
+      username: video.author?.uniqueId || '',
+      nickname: video.author?.nickname || '',
+      avatar: video.author?.avatarThumb || '',
+    },
+    stats: {
+      plays: video.stats?.playCount || 0,
+      likes: video.stats?.diggCount || 0,
+      comments: video.stats?.commentCount || 0,
+      shares: video.stats?.shareCount || 0,
+      saves: video.stats?.collectCount || 0,
+    },
+    createdAt: new Date(video.createTime * 1000).toISOString(),
+  }));
 }
