@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Youtube, Instagram, Music2, Settings2 } from 'lucide-react';
+import { Music2, Settings2 } from 'lucide-react';
 import type { Platform, PlatformConfig } from '@/types';
 import { PLATFORMS } from '@/lib/constants';
 import { YouTubeConfigModal } from '@/components/youtube/YouTubeConfigModal';
@@ -16,9 +16,17 @@ const PlatformIcon = ({ platform }: { platform: Platform }) => {
 
   switch (platform) {
     case 'youtube':
-      return <Youtube {...iconProps} />;
+      return (
+        <span className="flex h-4 w-4 items-center justify-center text-[10px] font-bold leading-none">
+          ▶
+        </span>
+      );
     case 'instagram':
-      return <Instagram {...iconProps} />;
+      return (
+        <span className="flex h-4 w-4 items-center justify-center text-[10px] font-bold leading-none">
+          ◎
+        </span>
+      );
     case 'tiktok':
       return <Music2 {...iconProps} />;
     default:

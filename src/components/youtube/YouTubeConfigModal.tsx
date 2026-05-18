@@ -76,8 +76,14 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [savedConfig, setSavedConfig] = useState<ConfigState>(DEFAULT_CONFIG);
+
+  const hasChanges =
+    config.maxResults !== savedConfig.maxResults ||
+    config.dateRange !== savedConfig.dateRange ||
+    config.region !== savedConfig.region ||
+    config.videoDuration !== savedConfig.videoDuration ||
+    config.order !== savedConfig.order;
 
   const fetchConfig = useCallback(async () => {
     try {
@@ -96,6 +102,7 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch on open
       fetchConfig();
       requestAnimationFrame(() => {
         setIsVisible(true);
@@ -104,16 +111,6 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
       setIsVisible(false);
     }
   }, [isOpen, fetchConfig]);
-
-  useEffect(() => {
-    const changed =
-      config.maxResults !== savedConfig.maxResults ||
-      config.dateRange !== savedConfig.dateRange ||
-      config.region !== savedConfig.region ||
-      config.videoDuration !== savedConfig.videoDuration ||
-      config.order !== savedConfig.order;
-    setHasChanges(changed);
-  }, [config, savedConfig]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -127,7 +124,7 @@ export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps)
       if (response.ok) {
         const data = await response.json();
         setSavedConfig(data);
-        setHasChanges(false);
+        setConfig(data);
         toast.success('Settings saved');
       } else {
         toast.error('Failed to save');

@@ -2,7 +2,7 @@ import { AuthForm } from '@/components/auth';
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="font-[family-name:var(--font-doto)] text-3xl font-medium tracking-tight text-white mb-2">

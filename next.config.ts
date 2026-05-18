@@ -16,12 +16,27 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.tiktokcdn.com',
+        hostname: '**.tiktokcdn.com',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: '*.cdninstagram.com',
+        hostname: '**.tiktokcdn-eu.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.tiktokcdn-us.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cdninstagram.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.fbcdn.net',
         pathname: '/**',
       },
     ],
