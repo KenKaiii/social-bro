@@ -13,10 +13,10 @@ export interface YouTubeConfigData {
 
 const DEFAULT_CONFIG: YouTubeConfigData = {
   maxResults: 25,
-  dateRange: 'any',
+  dateRange: 'month',
   region: 'US',
   videoDuration: 'any',
-  order: 'relevance',
+  order: 'date',
 };
 
 // GET - Fetch YouTube config for current user
@@ -58,7 +58,9 @@ export async function POST(request: NextRequest) {
 
     // Validate inputs
     const validMaxResults = Math.min(Math.max(Number(maxResults) || 25, 1), 50);
-    const validDateRange = ['any', 'day', 'week', 'month'].includes(dateRange) ? dateRange : 'any';
+    const validDateRange = ['any', 'day', 'week', 'month'].includes(dateRange)
+      ? dateRange
+      : 'month';
     // Validate region code (ISO 3166-1 alpha-2)
     const validRegionCodes = [
       'US',
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
       : 'any';
     const validOrder = ['date', 'rating', 'relevance', 'title', 'viewCount'].includes(order)
       ? order
-      : 'relevance';
+      : 'date';
 
     // Upsert config for this user
     const config = await prisma.youTubeConfig.upsert({

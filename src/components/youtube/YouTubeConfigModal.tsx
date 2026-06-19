@@ -65,10 +65,10 @@ const MAX_RESULTS_OPTIONS = [10, 15, 20, 25, 30, 40, 50];
 
 const DEFAULT_CONFIG: ConfigState = {
   maxResults: 25,
-  dateRange: 'any',
+  dateRange: 'month',
   region: 'US',
   videoDuration: 'any',
-  order: 'relevance',
+  order: 'date',
 };
 
 export function YouTubeConfigModal({ isOpen, onClose }: YouTubeConfigModalProps) {

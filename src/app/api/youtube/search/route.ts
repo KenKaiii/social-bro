@@ -53,10 +53,10 @@ export async function GET(request: NextRequest) {
     // Fetch user-specific config from database
     const defaultConfig = {
       maxResults: 25,
-      dateRange: 'any',
+      dateRange: 'month',
       region: 'US',
       videoDuration: 'any',
-      order: 'relevance',
+      order: 'date',
     };
 
     let config = defaultConfig;
