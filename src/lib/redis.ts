@@ -33,18 +33,30 @@ export function getRedis(): Redis | null {
   }
 
   client = new Redis(buildUrl(url), {
-    // Fail fast rather than queueing commands behind a dead connection —
-    // callers degrade to in-memory limiting instead of hanging the request.
-    maxRetriesPerRequest: 1,
-    enableOfflineQueue: false,
-    connectTimeout: 3000,
-    lazyConnect: false,
+    // Queue commands while the socket is still connecting or briefly
+    // reconnecting. With this disabled, every command issued before the
+    // connection became ready failed instantly with "Stream isn't writeable",
+    // silently degrading every replica to per-process limiting.
+    enableOfflineQueue: true,
+    maxRetriesPerRequest: 2,
+    connectTimeout: 5000,
+    // Hard ceiling per command, so a stalled Redis falls back to the
+    // in-memory path quickly instead of holding the request open.
+    commandTimeout: 1000,
+    // Bounded reconnect backoff; returning a number keeps ioredis retrying.
+    retryStrategy: (times: number) => Math.min(times * 200, 5000),
   });
 
   // Without a listener, a connection error is an unhandled 'error' event and
   // crashes the process.
   client.on('error', (error: Error) => {
     console.error('[redis] connection error:', error.message);
+  });
+
+  // Logged once per replica so a silent fallback to in-memory limiting is
+  // visible in deploy logs rather than being invisible until abused.
+  client.on('ready', () => {
+    console.log('[redis] connected — rate limiting is shared across replicas');
   });
 
   return client;
