@@ -1,23 +1,15 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/db';
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
-
-function validateAdminSecret() {
-  if (!ADMIN_SECRET) {
-    throw new Error('ADMIN_SECRET environment variable must be configured');
-  }
-  return ADMIN_SECRET;
-}
+import { authorizeAdmin } from '@/lib/admin-auth';
+import { validatePassword } from '@/lib/password';
 
 // Admin sets a password directly for a user
 export async function POST(request: Request) {
   try {
-    const adminSecret = validateAdminSecret();
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${adminSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await authorizeAdmin(request);
+    if (!admin.ok) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
     }
 
     let body;
@@ -32,11 +24,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId and password are required' }, { status: 400 });
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      );
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -55,6 +45,9 @@ export async function POST(request: Request) {
         password: hashedPassword,
         inviteToken: null,
         createdAt: user.createdAt || new Date(),
+        // Revokes every JWT issued before now, so an admin-forced reset
+        // actually evicts an attacker who already holds a session.
+        passwordChangedAt: new Date(),
       },
     });
 

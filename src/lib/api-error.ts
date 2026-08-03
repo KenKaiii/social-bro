@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getErrorMessage, isApiError } from './errors';
+import { isApiError } from './errors';
 
 /**
  * Standard API route error handler. Maps known auth errors, `ApiError`
@@ -31,6 +31,9 @@ export function handleApiError(error: unknown, fallback = 'Request failed'): Nex
     return NextResponse.json({ error: error.message }, { status: error.statusCode });
   }
 
+  // Never echo an unrecognised error back to the client: Prisma messages
+  // embed absolute file paths, source excerpts, and the internal DB host.
+  // Log the detail server-side and return only the curated fallback.
   console.error('Unhandled API error:', error);
-  return NextResponse.json({ error: getErrorMessage(error, fallback) }, { status: 500 });
+  return NextResponse.json({ error: fallback }, { status: 500 });
 }

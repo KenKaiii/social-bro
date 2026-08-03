@@ -102,7 +102,23 @@ export async function rapidApiFetch<T>(
         throw lastError;
       }
 
-      return response.json() as Promise<T>;
+      // Some RapidAPI providers return 204/empty bodies instead of an error.
+      // Treat that as an empty payload rather than letting JSON.parse throw,
+      // which would otherwise surface as a bogus "Network error".
+      const text = await response.text();
+      if (!text.trim()) {
+        return {} as T;
+      }
+
+      try {
+        return JSON.parse(text) as T;
+      } catch {
+        throw new ApiError(
+          'Received an invalid response from the API',
+          'RAPIDAPI_BAD_RESPONSE',
+          502
+        );
+      }
     } catch (error) {
       // Network errors (fetch failures)
       if (!(error instanceof ApiError)) {

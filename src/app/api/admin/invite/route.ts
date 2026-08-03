@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/db';
-
-// Admin secret - must be configured in production
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
-
-function validateAdminSecret() {
-  if (!ADMIN_SECRET) {
-    throw new Error('ADMIN_SECRET environment variable must be configured');
-  }
-  return ADMIN_SECRET;
-}
+import { authorizeAdmin } from '@/lib/admin-auth';
 
 export async function POST(request: Request) {
   try {
-    const adminSecret = validateAdminSecret();
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${adminSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await authorizeAdmin(request);
+    if (!admin.ok) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
     }
 
     let body;
@@ -73,10 +63,9 @@ export async function POST(request: Request) {
 // Reset password for an existing user (generates new invite token)
 export async function PATCH(request: Request) {
   try {
-    const adminSecret = validateAdminSecret();
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${adminSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await authorizeAdmin(request);
+    if (!admin.ok) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
     }
 
     let body;
@@ -130,10 +119,9 @@ export async function PATCH(request: Request) {
 // List all invited users (for admin)
 export async function GET(request: Request) {
   try {
-    const adminSecret = validateAdminSecret();
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${adminSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const admin = await authorizeAdmin(request);
+    if (!admin.ok) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
     }
 
     const users = await prisma.user.findMany({

@@ -61,4 +61,8 @@ ENV HOSTNAME="0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-CMD ["sh", "-c", "npx prisma db push && node server.js"]
+# Schema changes are applied by the `preDeployCommand` in railway.json
+# (`prisma migrate deploy`), which runs ONCE per deploy. Running `prisma db
+# push` here instead would race across all replicas on every start and can drop
+# columns that are not in the schema, so it is deliberately not used.
+CMD ["node", "server.js"]

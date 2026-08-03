@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/db';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { getClientIp } from '@/lib/admin-auth';
+import { validatePassword } from '@/lib/password';
 
 export async function POST(request: NextRequest) {
   try {
     // Rate limit auth operations to prevent brute force
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimit = checkRateLimit(`auth:${ip}`, RATE_LIMITS.auth);
+    // Use the proxy-written (right-most) XFF entry — the raw header is
+    // client-supplied and can be rotated to sidestep the limit entirely.
+    const rateLimit = await checkRateLimit(`auth:${getClientIp(request)}`, RATE_LIMITS.auth);
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: 'Too many attempts. Please try again later.' },
@@ -27,23 +30,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token and password are required' }, { status: 400 });
     }
 
-    // Password complexity validation
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
-
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasLowercase = /[a-z]/.test(password);
-    const hasNumber = /\d/.test(password);
-
-    if (!hasUppercase || !hasLowercase || !hasNumber) {
-      return NextResponse.json(
-        { error: 'Password must include uppercase, lowercase, and a number' },
-        { status: 400 }
-      );
+    // Shared policy — keeps this flow and the admin-provisioned one identical.
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
     // Find user by invite token
@@ -68,6 +58,8 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         inviteToken: null, // Clear the token
         createdAt: new Date(), // Mark as activated
+        // Revokes any JWT issued before this reset.
+        passwordChangedAt: new Date(),
       },
     });
 

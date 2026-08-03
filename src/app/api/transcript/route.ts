@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const userId = await requireValidUser();
 
     // Rate limit expensive operations
-    const rateLimit = checkRateLimit(`transcript:${userId}`, RATE_LIMITS.expensive);
+    const rateLimit = await checkRateLimit(`transcript:${userId}`, RATE_LIMITS.expensive);
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Please try again later.' },

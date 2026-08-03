@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { validatePassword } from '@/lib/password';
 
 interface User {
   id: string;
@@ -152,8 +153,11 @@ export default function AdminPage() {
   const handleSetPassword = async (userId: string) => {
     if (!newPassword) return;
 
-    if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    // Mirror the server-side policy in src/lib/password.ts so the admin gets
+    // immediate feedback instead of a round-trip 400.
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast.error(passwordError);
       return;
     }
 
@@ -429,7 +433,7 @@ export default function AdminPage() {
                                 type="password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="New password (min 8 chars)"
+                                placeholder="New password (8+ chars, Aa1)"
                                 disabled={isSavingPassword}
                                 autoFocus
                                 className={cn(

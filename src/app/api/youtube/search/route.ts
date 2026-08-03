@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const userId = await requireUserId();
 
     // Rate limit search requests
-    const rateLimit = checkRateLimit(`youtube-search:${userId}`, RATE_LIMITS.search);
+    const rateLimit = await checkRateLimit(`youtube-search:${userId}`, RATE_LIMITS.search);
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Please try again later.' },

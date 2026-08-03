@@ -24,6 +24,7 @@
     "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
+    "ioredis": "^5.11.1",
     "jose": "^6.2.3",
     "lru-cache": "^11.4.0",
     "lucide-react": "^1.16.0",

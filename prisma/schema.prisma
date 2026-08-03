@@ -18,6 +18,10 @@ model User {
   createdAt   DateTime? // Set when user completes signup
   updatedAt   DateTime @updatedAt
 
+  // Bumped whenever the password changes. Sessions issued before this instant
+  // are rejected, so a password reset evicts already-stolen JWTs.
+  passwordChangedAt DateTime?
+
   // User's data
   searches        Search[]
   savedSearches   SavedSearch[]

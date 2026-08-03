@@ -7,13 +7,15 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAuthPage =
-        nextUrl.pathname.startsWith('/login') ||
-        nextUrl.pathname.startsWith('/set-password') ||
-        nextUrl.pathname.startsWith('/admin');
 
-      if (isAuthPage) {
-        // Redirect logged-in users away from login page only
+      // Publicly reachable by necessity: you cannot be signed in yet.
+      // `/admin` is deliberately NOT here — it must require a session, even
+      // though its API calls are additionally gated by ADMIN_SECRET.
+      const isPublicAuthPage =
+        nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/set-password');
+
+      if (isPublicAuthPage) {
+        // Redirect logged-in users away from the login page only
         if (isLoggedIn && nextUrl.pathname.startsWith('/login')) {
           return Response.redirect(new URL('/', nextUrl));
         }

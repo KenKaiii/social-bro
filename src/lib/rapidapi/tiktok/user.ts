@@ -127,9 +127,11 @@ export async function getUserPosts({
   count = 35,
   cursor = 0,
 }: TikTokUserPostsOptions): Promise<TikTokUserPost[]> {
+  // NOTE: the provider's /api/user/popular-posts endpoint returns 204 No Content
+  // as of Aug 2026, so we fetch the user's posts and rank them by play count here.
   const response = await rapidApiFetch<TikTokApiUserPostsResponse>(userId, {
     host: TIKTOK_HOST,
-    endpoint: '/api/user/popular-posts',
+    endpoint: '/api/user/posts',
     params: {
       secUid,
       count: count.toString(),
@@ -137,7 +139,10 @@ export async function getUserPosts({
     },
   });
 
-  const items = response.data?.itemList || [];
+  const items = (response.data?.itemList || [])
+    .slice()
+    .sort((a, b) => (b.stats?.playCount || 0) - (a.stats?.playCount || 0))
+    .slice(0, count);
 
   return items.map((video) => ({
     id: video.id,

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { getYouTubeTranscript } from '@/lib/youtube';
 import { repurposeTranscript, type ProgressUpdate } from '@/lib/repurpose';
 import { requireValidUser } from '@/lib/auth-utils';
-import { getErrorMessage } from '@/lib/errors';
+import { isApiError } from '@/lib/errors';
 import { handleApiError } from '@/lib/api-error';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
@@ -84,7 +84,7 @@ async function handleStreamingRequest(request: NextRequest) {
       const userId = await requireValidUser();
 
       // Rate limit expensive operations
-      const rateLimit = checkRateLimit(`repurpose:${userId}`, RATE_LIMITS.expensive);
+      const rateLimit = await checkRateLimit(`repurpose:${userId}`, RATE_LIMITS.expensive);
       if (!rateLimit.success) {
         await writeEvent('error', { error: 'Rate limit exceeded. Please try again later.' });
         await writer.close();
@@ -205,7 +205,11 @@ async function handleStreamingRequest(request: NextRequest) {
       await writer.close();
     } catch (error) {
       console.error('Error repurposing URL:', error);
-      await writeEvent('error', { error: getErrorMessage(error, 'Failed to repurpose') });
+      // Only surface curated ApiError text; anything else may embed Prisma
+      // paths, source excerpts, or the internal DB host.
+      await writeEvent('error', {
+        error: isApiError(error) ? error.message : 'Failed to repurpose',
+      });
       await writer.close();
     }
   })();
@@ -224,6 +228,16 @@ async function handleStreamingRequest(request: NextRequest) {
 async function handleNonStreamingRequest(request: NextRequest) {
   try {
     const userId = await requireValidUser();
+
+    // Same limit as the streaming branch — without this, dropping the
+    // `Accept: text/event-stream` header bypasses rate limiting entirely.
+    const rateLimit = await checkRateLimit(`repurpose:${userId}`, RATE_LIMITS.expensive);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      );
+    }
 
     const body = await request.json();
     const { url, lang = 'en' } = body as {

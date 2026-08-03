@@ -6,6 +6,52 @@ import { decodeHtmlEntities } from '@/lib/utils';
 import { requireUserId, requireValidUser } from '@/lib/auth-utils';
 import { handleApiError } from '@/lib/api-error';
 
+/** Caps on user-supplied input, to bound how much a single request can persist. */
+const MAX_QUERY_LENGTH = 200;
+const MAX_RESULTS = 100;
+const MAX_TEXT_LENGTH = 500;
+const MAX_URL_LENGTH = 2048;
+
+function isPlatform(value: unknown): value is Platform {
+  return typeof value === 'string' && Object.values(Platform).includes(value as Platform);
+}
+
+function boundedString(value: unknown, max: number, field: string): string {
+  if (typeof value !== 'string') {
+    throw new Error(`${field} must be a string`);
+  }
+  if (value.length > max) {
+    throw new Error(`${field} must be at most ${max} characters`);
+  }
+  return value;
+}
+
+/** Coerce a count to a non-negative BigInt, rejecting NaN/Infinity/negatives. */
+function boundedCount(value: unknown, field: string): bigint {
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error(`${field} must be a non-negative number`);
+  }
+  return BigInt(Math.floor(num));
+}
+
+function toResultRow(item: unknown) {
+  if (typeof item !== 'object' || item === null) {
+    throw new Error('Each result must be an object');
+  }
+  const raw = item as Record<string, unknown>;
+  return {
+    externalId: boundedString(raw.id, MAX_TEXT_LENGTH, 'id'),
+    title: boundedString(raw.title ?? '', MAX_TEXT_LENGTH, 'title'),
+    creatorName: boundedString(raw.username ?? '', MAX_TEXT_LENGTH, 'username'),
+    thumbnail: raw.thumbnail ? boundedString(raw.thumbnail, MAX_URL_LENGTH, 'thumbnail') : null,
+    url: boundedString(raw.url ?? '', MAX_URL_LENGTH, 'url'),
+    viewCount: boundedCount(raw.views ?? 0, 'views'),
+    likeCount: boundedCount(raw.likes ?? 0, 'likes'),
+    commentCount: boundedCount(raw.comments ?? 0, 'comments'),
+  };
+}
+
 // GET - Fetch all saved searches for current user with pagination
 export async function GET(request: NextRequest) {
   try {
@@ -85,8 +131,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Map string platform to Prisma enum
-    const prismaPlatform = platform as Platform;
+    // `as Platform` is erased at runtime, so validate against the real enum
+    // before it reaches Prisma — an unknown value throws a validation error
+    // that would otherwise surface as a 500.
+    if (!isPlatform(platform)) {
+      return NextResponse.json({ error: 'Invalid platform' }, { status: 400 });
+    }
+    const prismaPlatform: Platform = platform;
+
+    if (typeof query !== 'string' || query.length > MAX_QUERY_LENGTH) {
+      return NextResponse.json(
+        { error: `query must be a string of at most ${MAX_QUERY_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    if (!Array.isArray(data) || data.length > MAX_RESULTS) {
+      return NextResponse.json(
+        { error: `data must be an array of at most ${MAX_RESULTS} items` },
+        { status: 400 }
+      );
+    }
+
+    let results;
+    try {
+      results = data.map(toResultRow);
+    } catch (validationError) {
+      return NextResponse.json(
+        {
+          error: validationError instanceof Error ? validationError.message : 'Invalid result item',
+        },
+        { status: 400 }
+      );
+    }
 
     // Upsert the saved search (update if exists, create if not)
     const savedSearch = await prisma.savedSearch.upsert({
@@ -101,16 +178,7 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(), // Update timestamp
         results: {
           deleteMany: {}, // Clear old results
-          create: data.map((item) => ({
-            externalId: item.id,
-            title: item.title,
-            creatorName: item.username,
-            thumbnail: item.thumbnail || null,
-            url: item.url,
-            viewCount: BigInt(item.views),
-            likeCount: BigInt(item.likes),
-            commentCount: BigInt(item.comments),
-          })),
+          create: results,
         },
       },
       create: {
@@ -118,16 +186,7 @@ export async function POST(request: NextRequest) {
         query,
         platform: prismaPlatform,
         results: {
-          create: data.map((item) => ({
-            externalId: item.id,
-            title: item.title,
-            creatorName: item.username,
-            thumbnail: item.thumbnail || null,
-            url: item.url,
-            viewCount: BigInt(item.views),
-            likeCount: BigInt(item.likes),
-            commentCount: BigInt(item.comments),
-          })),
+          create: results,
         },
       },
       include: {

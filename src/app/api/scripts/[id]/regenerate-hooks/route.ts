@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { createChatCompletion } from '@/lib/openrouter';
 import { HOOKS_SYSTEM_PROMPT, HOOKS_PROMPT } from '@/lib/repurpose/prompts';
 import { extractOriginalHook } from '@/lib/repurpose/chunker';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -16,17 +17,24 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     const userId = await requireUserId();
     const { id } = await params;
 
-    // Get the script
-    const script = await prisma.script.findUnique({
-      where: { id },
+    // This route invokes the LLM on every call — throttle it like the
+    // other expensive endpoints.
+    const rateLimit = await checkRateLimit(`regen-hooks:${userId}`, RATE_LIMITS.expensive);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    // Scope the lookup by userId so a foreign id is indistinguishable from
+    // a missing one (no existence oracle) and ownership cannot be forgotten.
+    const script = await prisma.script.findFirst({
+      where: { id, userId },
     });
 
     if (!script) {
       return NextResponse.json({ error: 'Script not found' }, { status: 404 });
-    }
-
-    if (script.userId !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user's selected model
