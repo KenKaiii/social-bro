@@ -7,9 +7,9 @@ import { validatePassword } from '@/lib/password';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit auth operations to prevent brute force
-    // Use the proxy-written (right-most) XFF entry — the raw header is
-    // client-supplied and can be rotated to sidestep the limit entirely.
+    // Rate limit auth operations to prevent brute force. `getClientIp` reads
+    // the edge-set header rather than the raw one, which a client could
+    // otherwise rotate to sidestep the limit entirely.
     const rateLimit = await checkRateLimit(`auth:${getClientIp(request)}`, RATE_LIMITS.auth);
     if (!rateLimit.success) {
       return NextResponse.json(

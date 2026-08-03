@@ -97,8 +97,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return token;
       }
 
+      // A token with no subject cannot be revalidated, so treat it as invalid
+      // rather than querying with `undefined` (which Prisma rejects).
+      if (typeof token.id !== 'string') {
+        return null;
+      }
+
       const dbUser = await prisma.user.findUnique({
-        where: { id: token.id as string },
+        where: { id: token.id },
         select: { passwordChangedAt: true },
       });
 
@@ -107,8 +113,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return null;
       }
 
+      // Both sides are normalised to 0 for "never changed", so tokens issued
+      // before this field existed stay valid until the password actually
+      // changes — the deploy itself must not sign everyone out.
       const current = dbUser.passwordChangedAt?.getTime() ?? 0;
-      if (current !== token.passwordChangedAt) {
+      if (current !== (token.passwordChangedAt ?? 0)) {
         return null;
       }
 
