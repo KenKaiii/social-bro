@@ -5,10 +5,10 @@ import { handleApiError } from '@/lib/api-error';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const secUid = searchParams.get('secUid');
+  const username = searchParams.get('username');
 
-  if (!secUid) {
-    return NextResponse.json({ error: 'Query parameter "secUid" is required' }, { status: 400 });
+  if (!username) {
+    return NextResponse.json({ error: 'Query parameter "username" is required' }, { status: 400 });
   }
 
   try {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     const posts = await getUserPosts({
       userId,
-      secUid,
+      username,
     });
 
     const tableData = transformUserPostsToTableData(posts);

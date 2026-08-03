@@ -1,10 +1,15 @@
 import { rapidApiFetch } from '../client';
+import {
+  TIKTOK_HOST,
+  mapVideoItem,
+  type TikTokApiEnvelope,
+  type TikTokApiVideoItem,
+  type TikTokVideo,
+} from './shared';
 
-const TIKTOK_HOST = 'tiktok-api23.p.rapidapi.com';
-
-// User Info types
 export interface TikTokUserInfo {
-  secUid: string;
+  /** The provider's numeric user id. */
+  id: string;
   username: string;
   nickname: string;
   avatar: string;
@@ -14,47 +19,53 @@ export interface TikTokUserInfo {
   videos: number;
 }
 
-interface TikTokApiUserInfoResponse {
-  status_code?: number;
-  userInfo?: {
-    user?: {
-      secUid: string;
-      uniqueId: string;
-      nickname: string;
-      avatarThumb: string;
-    };
-    stats?: {
-      followerCount: number;
-      followingCount: number;
-      heartCount: number;
-      videoCount: number;
-    };
+type TikTokApiUserInfoResponse = TikTokApiEnvelope<{
+  user?: {
+    id?: string;
+    uniqueId?: string;
+    nickname?: string;
+    avatarThumb?: string;
   };
-}
+  stats?: {
+    followerCount?: number;
+    followingCount?: number;
+    heartCount?: number;
+    videoCount?: number;
+  };
+}>;
 
+/**
+ * Look up a user by their `@handle`.
+ *
+ * Returns null when the account does not exist, which the caller surfaces as
+ * a 404 rather than an empty result set.
+ */
 export async function getUserInfo(
   userId: string,
   username: string
 ): Promise<TikTokUserInfo | null> {
   const response = await rapidApiFetch<TikTokApiUserInfoResponse>(userId, {
     host: TIKTOK_HOST,
-    endpoint: '/api/user/info',
+    endpoint: '/user/info',
     params: {
-      uniqueId: username,
+      // The provider tolerates a leading '@', but strip it so the cache key
+      // and the value we echo back are consistent.
+      unique_id: username.replace(/^@/, ''),
     },
   });
 
-  if (!response.userInfo?.user) {
+  const user = response.data?.user;
+  if (response.code !== 0 || !user?.uniqueId) {
     return null;
   }
 
-  const { user, stats } = response.userInfo;
+  const stats = response.data?.stats;
 
   return {
-    secUid: user.secUid,
+    id: user.id || '',
     username: user.uniqueId,
-    nickname: user.nickname,
-    avatar: user.avatarThumb,
+    nickname: user.nickname || '',
+    avatar: user.avatarThumb || '',
     followers: stats?.followerCount || 0,
     following: stats?.followingCount || 0,
     likes: stats?.heartCount || 0,
@@ -62,106 +73,42 @@ export async function getUserInfo(
   };
 }
 
-export interface TikTokUserPost {
-  id: string;
-  description: string;
-  thumbnail: string;
-  duration: number;
-  videoUrl: string;
-  author: {
-    username: string;
-    nickname: string;
-    secUid: string;
-  };
-  stats: {
-    plays: number;
-    likes: number;
-    comments: number;
-    shares: number;
-    saves: number;
-  };
-  createdAt: string;
-}
+/** User posts share the common video shape. */
+export type TikTokUserPost = TikTokVideo;
 
 export interface TikTokUserPostsOptions {
   userId: string;
-  secUid: string;
+  username: string;
   count?: number;
   cursor?: number;
 }
 
-interface TikTokApiUserPost {
-  id: string;
-  desc: string;
-  createTime: number;
-  author?: {
-    uniqueId: string;
-    nickname: string;
-    secUid: string;
-  };
-  stats?: {
-    playCount: number;
-    diggCount: number;
-    commentCount: number;
-    shareCount: number;
-    collectCount: number;
-  };
-  video?: {
-    cover: string;
-    duration: number;
-  };
-}
-
-interface TikTokApiUserPostsResponse {
-  data?: {
-    itemList?: TikTokApiUserPost[];
-    cursor?: number;
-    hasMore?: boolean;
-  };
-  status_code?: number;
-}
+type TikTokApiUserPostsResponse = TikTokApiEnvelope<{
+  videos?: TikTokApiVideoItem[];
+  cursor?: number;
+  hasMore?: boolean;
+}>;
 
 export async function getUserPosts({
   userId,
-  secUid,
-  count = 35,
+  username,
+  count = 30,
   cursor = 0,
 }: TikTokUserPostsOptions): Promise<TikTokUserPost[]> {
-  // NOTE: the provider's /api/user/popular-posts endpoint returns 204 No Content
-  // as of Aug 2026, so we fetch the user's posts and rank them by play count here.
   const response = await rapidApiFetch<TikTokApiUserPostsResponse>(userId, {
     host: TIKTOK_HOST,
-    endpoint: '/api/user/posts',
+    endpoint: '/user/posts',
     params: {
-      secUid,
+      unique_id: username.replace(/^@/, ''),
       count: count.toString(),
       cursor: cursor.toString(),
+      // 1 = most popular. The provider returns these roughly, but not strictly,
+      // ordered, so they are sorted below for a stable ranking.
+      sort_type: '1',
     },
   });
 
-  const items = (response.data?.itemList || [])
-    .slice()
-    .sort((a, b) => (b.stats?.playCount || 0) - (a.stats?.playCount || 0))
-    .slice(0, count);
-
-  return items.map((video) => ({
-    id: video.id,
-    description: video.desc || '',
-    thumbnail: video.video?.cover || '',
-    duration: video.video?.duration || 0,
-    videoUrl: `https://www.tiktok.com/@${video.author?.uniqueId || ''}/video/${video.id}`,
-    author: {
-      username: video.author?.uniqueId || '',
-      nickname: video.author?.nickname || '',
-      secUid: video.author?.secUid || '',
-    },
-    stats: {
-      plays: video.stats?.playCount || 0,
-      likes: video.stats?.diggCount || 0,
-      comments: video.stats?.commentCount || 0,
-      shares: video.stats?.shareCount || 0,
-      saves: video.stats?.collectCount || 0,
-    },
-    createdAt: new Date(video.createTime * 1000).toISOString(),
-  }));
+  return (response.data?.videos || [])
+    .map(mapVideoItem)
+    .sort((a, b) => b.stats.plays - a.stats.plays);
 }

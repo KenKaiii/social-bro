@@ -118,8 +118,11 @@ const GUIDE_CONTENT: Record<ApiKeyService, GuideContent> = {
       },
       {
         title: 'Subscribe to TikTok API',
-        description: 'Visit the TikTok API23 page and subscribe to the free plan as well.',
-        link: { url: 'https://rapidapi.com/Lundehund/api/tiktok-api23/', text: 'TikTok API' },
+        description: 'Visit the TikTok Scraper7 API page and subscribe to the free plan as well.',
+        link: {
+          url: 'https://rapidapi.com/tikwm-tikwm-default/api/tiktok-scraper7/',
+          text: 'TikTok API',
+        },
       },
       {
         title: 'Copy your API key',

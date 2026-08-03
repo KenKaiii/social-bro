@@ -14,17 +14,17 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await requireUserId();
 
-    // First, get user info to get secUid
+    // Look the account up first so a missing user is a 404 rather than an
+    // empty result set.
     const userInfo = await getUserInfo(userId, username);
 
     if (!userInfo) {
       return NextResponse.json({ error: `User @${username} not found` }, { status: 404 });
     }
 
-    // Then, fetch user's posts using secUid
     const posts = await getUserPosts({
       userId,
-      secUid: userInfo.secUid,
+      username: userInfo.username,
     });
 
     const tableData = transformUserPostsToTableData(posts);

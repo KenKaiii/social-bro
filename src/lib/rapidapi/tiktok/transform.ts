@@ -39,6 +39,6 @@ export function transformUserPostsToTableData(posts: TikTokUserPost[]): TikTokTa
     comments: post.stats.comments,
     engagementScore: calculateEngagement(post.stats.plays, post.stats.likes, post.stats.comments),
     url: post.videoUrl,
-    thumbnail: post.thumbnail,
+    thumbnail: post.author.avatar || post.thumbnail,
   }));
 }
