@@ -56,7 +56,7 @@ export function getRedis(): Redis | null {
   // Logged once per replica so a silent fallback to in-memory limiting is
   // visible in deploy logs rather than being invisible until abused.
   client.on('ready', () => {
-    console.log('[redis] connected — rate limiting is shared across replicas');
+    console.warn('[redis] connected — rate limiting is shared across replicas');
   });
 
   return client;
