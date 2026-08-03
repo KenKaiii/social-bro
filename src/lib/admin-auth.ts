@@ -2,30 +2,32 @@ import { timingSafeEqual } from 'crypto';
 import { checkRateLimit, resetRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 
 /**
- * Extract a rate-limiting identity from proxy headers.
+ * Extract the client IP for rate limiting, as set by Railway's edge proxy.
  *
- * Deliberately uses the RIGHT-most `x-forwarded-for` entry, not the left-most.
- * A client can send its own `X-Forwarded-For` header, and proxies *append* to
- * it — so the left-most value is attacker-controlled and trivially rotated to
- * defeat rate limiting. The right-most entry is the one written by the proxy
- * closest to us and cannot be forged.
+ * Railway strips any client-supplied `X-Forwarded-For` / `X-Real-Ip` before
+ * setting its own, so these headers cannot be spoofed to evade a limit
+ * (verified against the live edge: injected values were discarded).
  *
- * Worst case (multiple proxy hops) this collapses to a shared bucket, which
- * fails closed — acceptable here, since a successful auth clears the counter.
+ * `x-real-ip` is preferred because it is a single value. In `x-forwarded-for`
+ * the LEFT-most entry is the real client; the right-most is an internal
+ * Railway hop that varies by edge POP, which would shard the rate-limit
+ * bucket per POP and effectively disable the limit.
  */
 export function getClientIp(request: Request): string {
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  if (realIp) {
+    return realIp;
+  }
+
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
-    const parts = forwarded
-      .split(',')
-      .map((part) => part.trim())
-      .filter(Boolean);
-    const nearest = parts[parts.length - 1];
-    if (nearest) {
-      return nearest;
+    const client = forwarded.split(',')[0]?.trim();
+    if (client) {
+      return client;
     }
   }
-  return request.headers.get('x-real-ip') ?? 'unknown';
+
+  return 'unknown';
 }
 
 /**
