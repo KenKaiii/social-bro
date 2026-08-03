@@ -14,18 +14,19 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await requireUserId();
 
-    // Look the account up first so a missing user is a 404 rather than an
-    // empty result set.
-    const userInfo = await getUserInfo(userId, username);
+    // Both endpoints accept the handle directly, so they run in parallel
+    // rather than chaining — this halves the round-trip for the common case.
+    // The info lookup is still what distinguishes "no such account" (404)
+    // from "account exists but has no posts" (empty table); for an unknown
+    // handle the posts call simply resolves to [].
+    const [userInfo, posts] = await Promise.all([
+      getUserInfo(userId, username),
+      getUserPosts({ userId, username }),
+    ]);
 
     if (!userInfo) {
       return NextResponse.json({ error: `User @${username} not found` }, { status: 404 });
     }
-
-    const posts = await getUserPosts({
-      userId,
-      username: userInfo.username,
-    });
 
     const tableData = transformUserPostsToTableData(posts);
 
