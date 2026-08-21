@@ -95,7 +95,7 @@ Railway will execute:
 | --- | --- | --- | --- | --- | --- |
 | F-1 | **HIGH** | YouTube data cached forever | CODE — `SavedSearchResult`, `SavedItem`, `RepurposeVideo` store `viewCount`/`likeCount`/`commentCount`; no purge job existed | YouTube API Services Developer Policies III.E.4: non-authorized statistics must not be stored beyond 30 calendar days; other non-authorized data must be deleted or refreshed after 30 days | **Fixed in code, not yet scheduled** — `purgeStaleStats()` + `POST /api/admin/retention`; needs the cron in F-9 |
 | F-8 | **HIGH** | Four tables created with `db push`, never migrated | RUNTIME — `prisma migrate deploy` into an empty database then failed with `The table public.RepurposeVideo does not exist`; `LlmModel`, `Script` and `UserSettings` were missing too | A restore or a rebuild from the repo produced a database missing a third of the app. Migrations must reproduce the live schema | **Fixed** — `20260822130000_baseline_db_push_tables`; drift now zero (RUNTIME) |
-| F-9 | **MEDIUM** | Retention job has no scheduler | DEDUCED — no cron in `railway.json`, no scheduler anywhere in the repo | The purge only satisfies the 30-day rule if something actually calls it | **Open — needs you** (see below) |
+| F-9 | **MEDIUM** | Retention job has no scheduler | DEDUCED — no cron in `railway.json`, no scheduler anywhere in the repo | The purge only satisfies the 30-day rule if something actually calls it | **Fixed** — `src/instrumentation.ts` starts an in-process scheduler on server boot; runs 60s after start, then every 12h (RUNTIME: observed expiring a seeded stale row) |
 | F-10 | **MEDIUM** | `Search` / `SearchResult` tables are dead | RUNTIME — zero `prisma.search*` call sites in `src/` once the generated client is excluded; recent searches live in `localStorage`, bookmarks in `SavedSearch` | Dead tables carrying a personal-data schema (query text + creator data) that nothing reads, so nothing ages out of them | **Fixed** — dropped in `20260822140000_drop_dead_search_tables`, guarded so it aborts rather than destroy unseen rows |
 | F-2 | **HIGH** | Instagram/TikTok data via scraper resellers | CODE — `instagram-looter2.p.rapidapi.com`, `tiktok-scraper7.p.rapidapi.com` | These are unofficial scrapers, not platform APIs. Meta and TikTok both prohibit automated collection; exposure is contractual (Meta has sued scrapers), plus GDPR liability for the creator data they return | **Open — needs your decision** |
 | F-3 | **MEDIUM** | Creator personal data stored | CODE — `creatorName`, `creatorId`, thumbnails, full transcripts of third parties' videos | Creators are data subjects you have no relationship with. Keep it minimal, keep it short-lived, delete on request. F-1's 30-day purge largely resolves this | Partly covered by F-1 |
@@ -151,7 +151,8 @@ Railway will execute:
 
 1. **Deploy.** The documents are complete — zero placeholders remain. Until you push, those 70 users still have
    no privacy policy, because production serves the old build (`/privacy` currently 307s to `/login`).
-2. **F-9 — schedule the purge.** It does nothing until something calls it. Any scheduler works:
+2. ~~**F-9 — schedule the purge.**~~ **Done** — the app schedules itself on boot. The endpoint below still works
+   for a manual run:
 
    ```
    curl -fsS -X POST https://<your-host>/api/admin/retention \
