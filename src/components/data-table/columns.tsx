@@ -6,7 +6,30 @@ import { ExternalLink, Check, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { YouTubeTableData, TikTokTableData, InstagramTableData, Platform } from '@/types';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, formatRelativeTime } from '@/lib/utils';
+
+/** Shared "Posted" column for platforms that expose a publish timestamp. */
+function publishedAtColumn<T extends { publishedAt?: string }>(): ColumnDef<T> {
+  return {
+    accessorKey: 'publishedAt',
+    header: 'Posted',
+    cell: ({ row }) => (
+      <span
+        className="tabular-nums text-white/60"
+        title={
+          row.original.publishedAt
+            ? new Date(row.original.publishedAt).toLocaleString()
+            : 'Date unavailable'
+        }
+      >
+        {formatRelativeTime(row.original.publishedAt)}
+      </span>
+    ),
+    sortingFn: (a, b) =>
+      (Date.parse(a.original.publishedAt ?? '') || 0) -
+      (Date.parse(b.original.publishedAt ?? '') || 0),
+  };
+}
 
 // Repurpose button component with loading state
 // Only YouTube is currently supported for repurposing
@@ -244,6 +267,7 @@ export const tiktokColumns: ColumnDef<TikTokTableData>[] = [
       );
     },
   },
+  publishedAtColumn<TikTokTableData>(),
   {
     accessorKey: 'url',
     header: 'URL',
@@ -334,6 +358,7 @@ export const instagramColumns: ColumnDef<InstagramTableData>[] = [
       );
     },
   },
+  publishedAtColumn<InstagramTableData>(),
   {
     accessorKey: 'url',
     header: 'URL',

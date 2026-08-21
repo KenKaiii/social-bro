@@ -16,5 +16,6 @@ export function transformReelsToTableData(reels: InstagramReel[]): InstagramTabl
     engagementScore: calculateEngagement(reel.playCount, reel.likeCount, reel.commentCount),
     url: reel.videoUrl,
     thumbnail: reel.thumbnail,
+    publishedAt: reel.createdAt || undefined,
   }));
 }

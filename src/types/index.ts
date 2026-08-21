@@ -42,6 +42,8 @@ export interface TikTokTableData {
   engagementScore: number;
   url: string;
   thumbnail?: string;
+  /** Publish time, ISO 8601. Absent when the provider omits it. */
+  publishedAt?: string;
 }
 
 export interface InstagramTableData {
@@ -54,6 +56,8 @@ export interface InstagramTableData {
   engagementScore: number;
   url: string;
   thumbnail?: string;
+  /** Publish time, ISO 8601. Absent when the provider omits it. */
+  publishedAt?: string;
 }
 
 export interface SavedSearchWithResults {

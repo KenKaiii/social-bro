@@ -21,6 +21,8 @@ export interface InstagramReel {
   videoDuration: number;
   videoUrl: string;
   username: string;
+  /** Publish time, ISO 8601. Empty when the provider omits it. */
+  createdAt: string;
 }
 
 interface InstagramApiReelMedia {
@@ -32,6 +34,8 @@ interface InstagramApiReelMedia {
   like_count?: number;
   comment_count?: number;
   video_duration?: number;
+  /** Epoch seconds. */
+  taken_at?: number;
   caption?: {
     text?: string;
   };
@@ -98,6 +102,8 @@ export async function getUserReels({
       videoDuration: media.video_duration || 0,
       videoUrl: `https://www.instagram.com/reel/${media.code}/`,
       username: media.user?.username || '',
+      // Epoch *seconds*; a missing or zero value would map to 1970.
+      createdAt: media.taken_at ? new Date(media.taken_at * 1000).toISOString() : '',
     };
   });
 }

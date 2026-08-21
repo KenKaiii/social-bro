@@ -24,10 +24,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const results = await searchTikTok({
-      userId,
-      keyword,
-    });
+    // Window and ranking live in searchTikTok's defaults — see the note there.
+    const results = await searchTikTok({ userId, keyword });
 
     const tableData = transformSearchResultsToTableData(results);
 

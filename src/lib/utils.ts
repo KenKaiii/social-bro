@@ -22,6 +22,31 @@ export function calculateEngagement(views: number, likes: number, comments: numb
 }
 
 /**
+ * Compact relative age of a publish date, e.g. "3d", "2w", "5mo".
+ *
+ * Returns an em dash when the timestamp is missing or unparseable, since the
+ * providers omit it on some items.
+ */
+export function formatRelativeTime(iso: string | undefined): string {
+  if (!iso) return '—';
+
+  const timestamp = Date.parse(iso);
+  if (Number.isNaN(timestamp)) return '—';
+
+  const seconds = Math.max(0, (Date.now() - timestamp) / 1000);
+  const hours = seconds / 3600;
+
+  if (hours < 1) return 'now';
+  if (hours < 24) return `${Math.floor(hours)}h`;
+
+  const days = hours / 24;
+  if (days < 7) return `${Math.floor(days)}d`;
+  if (days < 30) return `${Math.floor(days / 7)}w`;
+  if (days < 365) return `${Math.floor(days / 30)}mo`;
+  return `${Math.floor(days / 365)}y`;
+}
+
+/**
  * Decode HTML entities in a string (e.g., &#39; -> ', &amp; -> &)
  */
 export function decodeHtmlEntities(text: string): string {

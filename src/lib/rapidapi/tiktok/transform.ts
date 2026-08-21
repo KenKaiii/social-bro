@@ -23,6 +23,7 @@ export function transformSearchResultsToTableData(
     ),
     url: result.videoUrl,
     thumbnail: result.author.avatar || result.thumbnail,
+    publishedAt: result.createdAt || undefined,
   }));
 }
 
@@ -40,5 +41,6 @@ export function transformUserPostsToTableData(posts: TikTokUserPost[]): TikTokTa
     engagementScore: calculateEngagement(post.stats.plays, post.stats.likes, post.stats.comments),
     url: post.videoUrl,
     thumbnail: post.author.avatar || post.thumbnail,
+    publishedAt: post.createdAt || undefined,
   }));
 }

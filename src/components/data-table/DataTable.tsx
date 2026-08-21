@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { YouTubeTableData, TikTokTableData } from '@/types';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, formatRelativeTime } from '@/lib/utils';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -80,6 +80,11 @@ function MobileCard({ item, index }: { item: YouTubeTableData | TikTokTableData;
         <span className="tabular-nums">
           <span className="text-white/30">Comments:</span> {formatNumber(item.comments)}
         </span>
+        {'publishedAt' in item && item.publishedAt && (
+          <span className="tabular-nums">
+            <span className="text-white/30">Posted:</span> {formatRelativeTime(item.publishedAt)}
+          </span>
+        )}
       </div>
 
       {/* Action Row */}

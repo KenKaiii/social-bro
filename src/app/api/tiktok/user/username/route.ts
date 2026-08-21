@@ -28,6 +28,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: `User @${username} not found` }, { status: 404 });
     }
 
+    // Provider order (newest first) is kept: /user/posts accepts neither
+    // publish_time nor sort_type, and looking up a specific creator asks to
+    // browse that creator's recent work — not to discover trending videos, which
+    // is what keyword search is for. The Posted column makes the dates visible
+    // and the table header sorts on any column client-side.
     const tableData = transformUserPostsToTableData(posts);
 
     return NextResponse.json({
