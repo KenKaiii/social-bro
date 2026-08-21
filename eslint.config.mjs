@@ -14,6 +14,11 @@ const eslintConfig = defineConfig([
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
+  {
+    // Operator-run CLI drills: printing to stdout is their entire purpose.
+    files: ["scripts/**/*.ts"],
+    rules: { "no-console": "off" },
+  },
   globalIgnores([
     ".next/**",
     "out/**",

@@ -8,6 +8,42 @@ import { toast } from 'sonner';
 import { YouTubeTableData, TikTokTableData, InstagramTableData, Platform } from '@/types';
 import { formatNumber, formatRelativeTime } from '@/lib/utils';
 
+/**
+ * Shared "Engagement" column.
+ *
+ * `engagementScore` is `null` when the underlying statistics expired under the
+ * 30-day retention rule (see `lib/retention.ts`), which is not the same as a
+ * score of zero — so it renders as an em dash in a neutral badge rather than a
+ * red "bad engagement" one.
+ */
+function engagementColumn<T extends { engagementScore: number | null }>(): ColumnDef<T> {
+  return {
+    accessorKey: 'engagementScore',
+    header: 'Engagement',
+    cell: ({ row }) => {
+      const score = row.getValue('engagementScore') as number | null;
+      const color =
+        score === null
+          ? 'text-white/60 bg-white/5'
+          : score >= 10
+            ? 'text-green-400 bg-green-400/10'
+            : score >= 5
+              ? 'text-yellow-400 bg-yellow-400/10'
+              : score >= 2
+                ? 'text-orange-400 bg-orange-400/10'
+                : 'text-red-400 bg-red-400/10';
+
+      return (
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color}`}
+        >
+          {score === null ? '—' : `${score.toFixed(2)}%`}
+        </span>
+      );
+    },
+  };
+}
+
 /** Shared "Posted" column for platforms that expose a publish timestamp. */
 function publishedAtColumn<T extends { publishedAt?: string }>(): ColumnDef<T> {
   return {
@@ -156,27 +192,7 @@ export const youtubeColumns: ColumnDef<YouTubeTableData>[] = [
       <span className="tabular-nums">{formatNumber(row.getValue('comments'))}</span>
     ),
   },
-  {
-    accessorKey: 'engagementScore',
-    header: 'Engagement',
-    cell: ({ row }) => {
-      const score = row.getValue('engagementScore') as number;
-      const getScoreColor = (score: number) => {
-        if (score >= 10) return 'text-green-400 bg-green-400/10';
-        if (score >= 5) return 'text-yellow-400 bg-yellow-400/10';
-        if (score >= 2) return 'text-orange-400 bg-orange-400/10';
-        return 'text-red-400 bg-red-400/10';
-      };
-
-      return (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getScoreColor(score)}`}
-        >
-          {score.toFixed(2)}%
-        </span>
-      );
-    },
-  },
+  engagementColumn<YouTubeTableData>(),
   {
     accessorKey: 'url',
     header: 'URL',
@@ -246,27 +262,7 @@ export const tiktokColumns: ColumnDef<TikTokTableData>[] = [
       <span className="tabular-nums">{formatNumber(row.getValue('comments'))}</span>
     ),
   },
-  {
-    accessorKey: 'engagementScore',
-    header: 'Engagement',
-    cell: ({ row }) => {
-      const score = row.getValue('engagementScore') as number;
-      const getScoreColor = (score: number) => {
-        if (score >= 10) return 'text-green-400 bg-green-400/10';
-        if (score >= 5) return 'text-yellow-400 bg-yellow-400/10';
-        if (score >= 2) return 'text-orange-400 bg-orange-400/10';
-        return 'text-red-400 bg-red-400/10';
-      };
-
-      return (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getScoreColor(score)}`}
-        >
-          {score.toFixed(2)}%
-        </span>
-      );
-    },
-  },
+  engagementColumn<TikTokTableData>(),
   publishedAtColumn<TikTokTableData>(),
   {
     accessorKey: 'url',
@@ -337,27 +333,7 @@ export const instagramColumns: ColumnDef<InstagramTableData>[] = [
       <span className="tabular-nums">{formatNumber(row.getValue('comments'))}</span>
     ),
   },
-  {
-    accessorKey: 'engagementScore',
-    header: 'Engagement',
-    cell: ({ row }) => {
-      const score = row.getValue('engagementScore') as number;
-      const getScoreColor = (score: number) => {
-        if (score >= 10) return 'text-green-400 bg-green-400/10';
-        if (score >= 5) return 'text-yellow-400 bg-yellow-400/10';
-        if (score >= 2) return 'text-orange-400 bg-orange-400/10';
-        return 'text-red-400 bg-red-400/10';
-      };
-
-      return (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getScoreColor(score)}`}
-        >
-          {score.toFixed(2)}%
-        </span>
-      );
-    },
-  },
+  engagementColumn<InstagramTableData>(),
   publishedAtColumn<InstagramTableData>(),
   {
     accessorKey: 'url',

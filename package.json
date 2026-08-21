@@ -15,7 +15,9 @@
     "db:migrate": "unset DATABASE_URL; prisma migrate dev",
     "db:push": "unset DATABASE_URL; prisma db push",
     "db:studio": "unset DATABASE_URL; prisma studio",
-    "db:seed": "unset DATABASE_URL; npx tsx prisma/seed.ts"
+    "db:seed": "unset DATABASE_URL; npx tsx prisma/seed.ts",
+    "db:deploy": "unset DATABASE_URL; prisma migrate deploy",
+    "verify:retention": "unset DATABASE_URL; npx tsx --env-file=.env scripts/verify-retention.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

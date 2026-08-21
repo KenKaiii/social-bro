@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatNumber(num: number | undefined): string {
+/** Renders '—' for a missing or expired statistic, never a misleading 0. */
+export function formatNumber(num: number | null | undefined): string {
   if (num === undefined || num === null) return '—';
   if (num >= 1_000_000) {
     return `${(num / 1_000_000).toFixed(1)}M`;

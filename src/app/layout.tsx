@@ -23,8 +23,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Deliberately no maximumScale/userScalable: blocking pinch-zoom fails
+  // WCAG 1.4.4 (text must be resizable to 200%) and is one of the most
+  // frequently scanned accessibility defects on public pages.
 };
 
 export default function RootLayout({

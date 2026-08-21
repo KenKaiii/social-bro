@@ -8,26 +8,19 @@ export interface PlatformConfig {
   icon: string;
 }
 
-export interface SearchResult {
-  id: string;
-  title: string;
-  description?: string;
-  thumbnail?: string;
-  channelName?: string;
-  viewCount?: number;
-  publishedAt?: string;
-  platform: Platform;
-  url: string;
-}
-
 export interface YouTubeTableData {
   id: string;
   username: string;
   title: string;
-  views: number;
-  likes: number;
-  comments: number;
-  engagementScore: number;
+  /**
+   * `null` means the cached statistic expired under the 30-day retention rule
+   * (see `lib/retention.ts`), not that the video has zero views. `formatNumber`
+   * renders it as an em dash.
+   */
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  engagementScore: number | null;
   url: string;
   thumbnail?: string;
 }
@@ -36,10 +29,11 @@ export interface TikTokTableData {
   id: string;
   username: string;
   title: string;
-  views: number;
-  likes: number;
-  comments: number;
-  engagementScore: number;
+  /** `null` = expired cached statistic, not zero. See `YouTubeTableData`. */
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  engagementScore: number | null;
   url: string;
   thumbnail?: string;
   /** Publish time, ISO 8601. Absent when the provider omits it. */
@@ -50,10 +44,11 @@ export interface InstagramTableData {
   id: string;
   username: string;
   title: string;
-  views: number;
-  likes: number;
-  comments: number;
-  engagementScore: number;
+  /** `null` = expired cached statistic, not zero. See `YouTubeTableData`. */
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  engagementScore: number | null;
   url: string;
   thumbnail?: string;
   /** Publish time, ISO 8601. Absent when the provider omits it. */

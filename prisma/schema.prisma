@@ -23,7 +23,6 @@ model User {
   passwordChangedAt DateTime?
 
   // User's data
-  searches        Search[]
   savedSearches   SavedSearch[]
   savedItems      SavedItem[]
   apiKeys         ApiKey[]
@@ -43,56 +42,11 @@ enum Platform {
   tiktok
 }
 
-// Search history - stores user searches
-model Search {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  query     String
-  platform  Platform
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Results from this search
-  results SearchResult[]
-
-  @@index([userId])
-  @@index([platform])
-  @@index([createdAt])
-}
-
-// Search results - cached results from API calls
-model SearchResult {
-  id          String   @id @default(cuid())
-  searchId    String
-  search      Search   @relation(fields: [searchId], references: [id], onDelete: Cascade)
-
-  // Common fields across platforms
-  externalId  String   // YouTube video ID, Instagram post ID, TikTok video ID
-  platform    Platform
-  title       String
-  description String?  @db.Text
-  thumbnail   String?
-  url         String
-
-  // Creator/Channel info
-  creatorId   String?
-  creatorName String?
-
-  // Stats
-  viewCount   BigInt?
-  likeCount   BigInt?
-  commentCount BigInt?
-
-  // Dates
-  publishedAt DateTime?
-  createdAt   DateTime @default(now())
-
-  @@unique([searchId, externalId])
-  @@index([searchId])
-  @@index([platform])
-  @@index([externalId])
-}
+// NOTE: `Search` and `SearchResult` used to live here. They were an earlier
+// design for server-side search history that was replaced by localStorage
+// (see components/search/PreviousSearches.tsx) and had no reader or writer
+// left in the codebase. Dropped in 20260822140000_drop_dead_search_tables.
+// Bookmarked searches live in SavedSearch / SavedSearchResult below.
 
 // Saved searches - user bookmarked searches with full data
 model SavedSearch {
@@ -124,9 +78,15 @@ model SavedSearchResult {
   creatorName  String
   thumbnail    String?
   url          String
-  viewCount    BigInt      @default(0)
-  likeCount    BigInt      @default(0)
-  commentCount BigInt      @default(0)
+
+  // Nullable because platform statistics expire: the YouTube API Services
+  // Developer Policies require non-authorized statistics to be deleted or
+  // refreshed after 30 days. `purgeStaleStats()` nulls these out, keeping the
+  // user's saved result while dropping the stale numbers. Null means "expired",
+  // which is not the same as a genuine zero — the UI must not conflate them.
+  viewCount    BigInt?
+  likeCount    BigInt?
+  commentCount BigInt?
 
   @@index([savedSearchId])
   @@index([externalId])

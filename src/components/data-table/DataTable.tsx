@@ -26,7 +26,9 @@ interface DataTableProps<TData, TValue> {
 
 // Mobile card component for video data
 function MobileCard({ item, index }: { item: YouTubeTableData | TikTokTableData; index: number }) {
-  const getScoreColor = (score: number) => {
+  const getScoreColor = (score: number | null) => {
+    // Expired statistic: neutral, not a red "bad engagement" badge.
+    if (score === null) return 'text-white/60 bg-white/5';
     if (score >= 10) return 'text-green-400 bg-green-400/10';
     if (score >= 5) return 'text-yellow-400 bg-yellow-400/10';
     if (score >= 2) return 'text-orange-400 bg-orange-400/10';
@@ -62,7 +64,7 @@ function MobileCard({ item, index }: { item: YouTubeTableData | TikTokTableData;
         <span
           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${getScoreColor(item.engagementScore)}`}
         >
-          {item.engagementScore.toFixed(1)}%
+          {item.engagementScore === null ? '—' : `${item.engagementScore.toFixed(1)}%`}
         </span>
       </div>
 
@@ -199,21 +201,34 @@ export function DataTable<TData, TValue>({
                   const isSortable = header.column.getCanSort();
                   const sortDirection = header.column.getIsSorted();
 
+                  const label = header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext());
+
                   return (
                     <TableHead
                       key={header.id}
-                      className={cn(
-                        isSortable &&
-                          'cursor-pointer select-none hover:text-white/80 transition-colors'
-                      )}
-                      onClick={header.column.getToggleSortingHandler()}
+                      aria-sort={
+                        !isSortable
+                          ? undefined
+                          : sortDirection === 'asc'
+                            ? 'ascending'
+                            : sortDirection === 'desc'
+                              ? 'descending'
+                              : 'none'
+                      }
                     >
-                      <div className="flex items-center gap-2">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                        {isSortable && (
-                          <span className="text-white/40">
+                      {isSortable ? (
+                        // A real <button> rather than an onClick on the <th>:
+                        // sorting has to be reachable by keyboard (WCAG 2.1.1)
+                        // and announced to screen readers.
+                        <button
+                          type="button"
+                          onClick={header.column.getToggleSortingHandler()}
+                          className="flex items-center gap-2 select-none transition-colors hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                        >
+                          {label}
+                          <span className="text-white/60" aria-hidden="true">
                             {sortDirection === 'asc' ? (
                               <ArrowUp className="h-3 w-3" />
                             ) : sortDirection === 'desc' ? (
@@ -222,8 +237,10 @@ export function DataTable<TData, TValue>({
                               <ArrowUpDown className="h-3 w-3" />
                             )}
                           </span>
-                        )}
-                      </div>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">{label}</div>
+                      )}
                     </TableHead>
                   );
                 })}

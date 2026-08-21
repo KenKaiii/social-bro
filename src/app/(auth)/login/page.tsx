@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AuthForm } from '@/components/auth';
 
 export default function LoginPage() {
@@ -15,7 +16,17 @@ export default function LoginPage() {
           <AuthForm mode="login" />
         </div>
 
-        <p className="mt-6 text-center text-sm text-white/40">This is an invite-only app.</p>
+        <p className="mt-6 text-center text-sm text-white/70">
+          This is an invite-only app. By signing in you agree to the{' '}
+          <Link href="/terms" className="underline hover:text-white">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="underline hover:text-white">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

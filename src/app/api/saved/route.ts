@@ -27,7 +27,13 @@ function boundedString(value: unknown, max: number, field: string): string {
 }
 
 /** Coerce a count to a non-negative BigInt, rejecting NaN/Infinity/negatives. */
-function boundedCount(value: unknown, field: string): bigint {
+/**
+ * `null`/`undefined` is preserved rather than coerced to 0: a missing count
+ * means the statistic expired under the 30-day retention rule, and storing it
+ * as 0 would resurrect it as a real "zero views".
+ */
+function boundedCount(value: unknown, field: string): bigint | null {
+  if (value === null || value === undefined) return null;
   const num = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(num) || num < 0) {
     throw new Error(`${field} must be a non-negative number`);
@@ -46,9 +52,9 @@ function toResultRow(item: unknown) {
     creatorName: boundedString(raw.username ?? '', MAX_TEXT_LENGTH, 'username'),
     thumbnail: raw.thumbnail ? boundedString(raw.thumbnail, MAX_URL_LENGTH, 'thumbnail') : null,
     url: boundedString(raw.url ?? '', MAX_URL_LENGTH, 'url'),
-    viewCount: boundedCount(raw.views ?? 0, 'views'),
-    likeCount: boundedCount(raw.likes ?? 0, 'likes'),
-    commentCount: boundedCount(raw.comments ?? 0, 'comments'),
+    viewCount: boundedCount(raw.views, 'views'),
+    likeCount: boundedCount(raw.likes, 'likes'),
+    commentCount: boundedCount(raw.comments, 'comments'),
   };
 }
 
@@ -79,20 +85,31 @@ export async function GET(request: NextRequest) {
       query: search.query,
       platform: search.platform as PlatformType,
       createdAt: search.createdAt.toISOString(),
-      results: search.results.map((r: (typeof search.results)[number]) => ({
-        id: r.externalId,
-        username: decodeHtmlEntities(r.creatorName),
-        title: decodeHtmlEntities(r.title),
-        views: Number(r.viewCount),
-        likes: Number(r.likeCount),
-        comments: Number(r.commentCount),
-        engagementScore:
-          Number(r.viewCount) > 0
-            ? ((Number(r.likeCount) + Number(r.commentCount)) / Number(r.viewCount)) * 100
-            : 0,
-        url: r.url,
-        thumbnail: r.thumbnail,
-      })),
+      results: search.results.map((r: (typeof search.results)[number]) => {
+        // Null counts mean the cached statistic expired under the 30-day
+        // retention rule. Coercing them to 0 here would show a saved video as
+        // having zero views, so nulls are passed through and rendered as '—'.
+        const views = r.viewCount === null ? null : Number(r.viewCount);
+        const likes = r.likeCount === null ? null : Number(r.likeCount);
+        const comments = r.commentCount === null ? null : Number(r.commentCount);
+
+        return {
+          id: r.externalId,
+          username: decodeHtmlEntities(r.creatorName),
+          title: decodeHtmlEntities(r.title),
+          views,
+          likes,
+          comments,
+          engagementScore:
+            views === null || likes === null || comments === null
+              ? null
+              : views > 0
+                ? ((likes + comments) / views) * 100
+                : 0,
+          url: r.url,
+          thumbnail: r.thumbnail,
+        };
+      }),
     }));
 
     return NextResponse.json({ savedSearches: transformed });
