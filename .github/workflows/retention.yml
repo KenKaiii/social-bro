@@ -1,0 +1,57 @@
+name: Expire cached platform stats
+
+# YouTube API Services Developer Policies (III.E.4) prohibit storing statistics
+# retrieved as Non-Authorized Data for more than 30 days. This calls the purge
+# endpoint daily so that ceiling is never crossed.
+#
+# Railway cron would need a second, billable service that starts and exits;
+# this runs on GitHub's schedule for free and hits the endpoint that already
+# exists. Requires one repository secret: ADMIN_SECRET (same value as the
+# ADMIN_SECRET variable on the Railway service).
+
+on:
+  schedule:
+    # 03:00 UTC daily — off-peak for an Australian operator.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: 'Count what would expire without writing anything'
+        type: boolean
+        default: false
+
+# Never let two purges overlap.
+concurrency:
+  group: retention-purge
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the retention endpoint
+        env:
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+          APP_URL: https://social-bro-production.up.railway.app
+          DRY_RUN: ${{ inputs.dryRun && '?dryRun=1' || '' }}
+        run: |
+          if [ -z "$ADMIN_SECRET" ]; then
+            echo "::error::ADMIN_SECRET repository secret is not set — the purge cannot authenticate."
+            exit 1
+          fi
+
+          # --fail-with-body: exit non-zero on 4xx/5xx but still show the body,
+          # so an auth failure or an outage fails the run loudly instead of
+          # silently skipping the purge for weeks.
+          curl --fail-with-body --silent --show-error \
+            --max-time 120 --retry 2 --retry-delay 30 \
+            -X POST "${APP_URL}/api/admin/retention${DRY_RUN}" \
+            -H "Authorization: Bearer ${ADMIN_SECRET}" \
+            | tee report.json
+
+          echo
+          echo "### Retention purge" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat report.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
