@@ -224,20 +224,22 @@ function sanitizeMessage(raw: string): string {
     try {
       const parsed = JSON.parse(candidate);
       const inner =
-        parsed?.error?.message ||
-        parsed?.message ||
-        parsed?.error ||
-        parsed?.detail ||
-        '';
+        parsed?.error?.message || parsed?.message || parsed?.error || parsed?.detail || '';
       if (typeof inner === 'string' && inner.trim()) {
         msg = inner.trim();
       } else {
         // JSON but no obvious message — drop the JSON blob
-        msg = msg.slice(0, jsonStart).trim().replace(/[:\-\s]+$/, '');
+        msg = msg
+          .slice(0, jsonStart)
+          .trim()
+          .replace(/[:\-\s]+$/, '');
       }
     } catch {
       // Not valid JSON — drop everything from the brace onwards
-      msg = msg.slice(0, jsonStart).trim().replace(/[:\-\s]+$/, '');
+      msg = msg
+        .slice(0, jsonStart)
+        .trim()
+        .replace(/[:\-\s]+$/, '');
     }
   }
 
@@ -278,5 +280,3 @@ export function getErrorMessage(error: unknown, fallback = 'An unexpected error 
   }
   return fallback;
 }
-
-

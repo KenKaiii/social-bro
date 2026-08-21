@@ -41,11 +41,7 @@ export async function getYouTubeTranscript({
     });
 
     if (!segments.length) {
-      throw new ApiError(
-        'No transcript available for this video',
-        'YOUTUBE_TRANSCRIPT_EMPTY',
-        404
-      );
+      throw new ApiError('No transcript available for this video', 'YOUTUBE_TRANSCRIPT_EMPTY', 404);
     }
 
     const transcript = segments
