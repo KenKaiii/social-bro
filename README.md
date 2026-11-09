@@ -2,6 +2,9 @@
 
 Search YouTube, TikTok & Instagram from one place. Find content, grab transcripts, repurpose scripts.
 
+> [!TIP]
+> **Want to build your own apps with AI?** A free 7-day build challenge and 20+ step-by-step projects are in my free community: **[skool.com/raid](https://www.skool.com/raid)**
+
 ## What It Does
 
 - **Unified Search** - Query all platforms at once, filter by creator with @username
@@ -46,7 +49,7 @@ Next.js 16 • React 19 • PostgreSQL • Prisma • TailwindCSS • NextAuth
 
 ## Author
 
-Built by [Ken](https://github.com/KenKaiii) — subscribe to [YouTube](https://youtube.com/@kenkaidoesai) and join the [Skool community](https://www.skool.com/kenkai) for more AI/dev content.
+Built by [Ken](https://github.com/KenKaiii) — subscribe to [YouTube](https://youtube.com/@kenkaidoesai) and join the [free Skool community](https://www.skool.com/raid) for a 7-day build challenge and 20+ step-by-step projects.
 
 ## License
 
